@@ -61,11 +61,6 @@ This is a simple application created using AppWithinMinutes and integrating draw
         <artifactId>xwiki-commons-tool-xar-plugin</artifactId>
         <version>${commons.version}</version>
       </plugin>
-      <plugin>
-        <!-- Just to force Java 1.6 on release. -->
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-      </plugin>
     </plugins>
   </build>
 </project>
