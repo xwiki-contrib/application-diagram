@@ -47,13 +47,6 @@ This is a simple application created using AppWithinMinutes and integrating draw
     <xwiki.clirr.skip>true</xwiki.clirr.skip>
   </properties>
   <build>
-    <plugins>
-      <plugin>
-        <groupId>org.xwiki.commons</groupId>
-        <artifactId>xwiki-commons-tool-xar-plugin</artifactId>
-        <version>${commons.version}</version>
-      </plugin>
-    </plugins>
     <!-- Needed to add support for the XAR packaging -->
     <extensions>
       <extension>
@@ -62,5 +55,17 @@ This is a simple application created using AppWithinMinutes and integrating draw
         <version>${commons.version}</version>
       </extension>
     </extensions>
+    <plugins>
+      <plugin>
+        <groupId>org.xwiki.commons</groupId>
+        <artifactId>xwiki-commons-tool-xar-plugin</artifactId>
+        <version>${commons.version}</version>
+      </plugin>
+      <plugin>
+        <!-- Just to force Java 1.6 on release. -->
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+      </plugin>
+    </plugins>
   </build>
 </project>
