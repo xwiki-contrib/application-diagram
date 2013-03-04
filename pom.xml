@@ -43,6 +43,13 @@ This is a simple application created using AppWithinMinutes and integrating draw
     <url>https://github.com/xwiki-contrib/application-diagram</url>
     <tag>HEAD</tag>
   </scm>
+  <distributionManagement>
+    <repository>
+      <id>xwiki-staging</id>
+      <name>XWiki Staging Repository</name>
+      <url>http://nexus.xwiki.org/nexus/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
   <properties>
     <!-- Don't run CLIRR here since there's no Java code. -->
     <xwiki.clirr.skip>true</xwiki.clirr.skip>
@@ -57,6 +64,7 @@ This is a simple application created using AppWithinMinutes and integrating draw
       </extension>
     </extensions>
     <plugins>
+      <!-- The XAR packaging uses the XAR plugin and thus we need to define what version to use -->
       <plugin>
         <groupId>org.xwiki.commons</groupId>
         <artifactId>xwiki-commons-tool-xar-plugin</artifactId>
