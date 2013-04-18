@@ -37,6 +37,24 @@
   <description>Create various types of diagrams using draw.io
 
 This is a simple application created using AppWithinMinutes and integrating draw.io. It supports both editing and viewing diagrams. Each diagram is stored in a wiki page. It doesn't require any external services in order to work properly.</description>
+  <inceptionYear>2013</inceptionYear>
+  <licenses>
+    <license>
+      <name>Attribution-NonCommercial-ShareAlike 3.0</name>
+      <url>http://creativecommons.org/licenses/by-nc-sa/3.0/</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <issueManagement>
+    <system>jira</system>
+    <url>http://jira.xwiki.org/browse/XCONTRIB/component/12850</url>
+  </issueManagement>
+  <developers>
+    <developer>
+      <id>mflorea</id>
+      <name>Marius Dumitru Florea</name>
+    </developer>
+  </developers>
   <scm>
     <connection>scm:git:git://github.com/xwiki-contrib/application-diagram.git</connection>
     <developerConnection>scm:git:git@github.com:xwiki-contrib/application-diagram.git</developerConnection>
@@ -51,9 +69,22 @@ This is a simple application created using AppWithinMinutes and integrating draw
     </repository>
   </distributionManagement>
   <properties>
+    <!-- Old names of this module used for retro compatibility when resolving dependencies of old extensions -->
+    <xwiki.extension.features>
+      mflorea:diagram-application,
+      org.xwiki.contrib:diagram-application
+    </xwiki.extension.features>
     <!-- Don't run CLIRR here since there's no Java code. -->
     <xwiki.clirr.skip>true</xwiki.clirr.skip>
   </properties>
+  <dependencies>
+    <dependency>
+      <groupId>org.xwiki.platform</groupId>
+      <artifactId>xwiki-platform-appwithinminutes-ui</artifactId>
+      <version>${project.parent.version}</version>
+      <type>xar</type>
+    </dependency>
+  </dependencies>
   <build>
     <!-- Needed to add support for the XAR packaging -->
     <extensions>
