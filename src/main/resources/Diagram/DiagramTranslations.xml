@@ -62,7 +62,7 @@ Diagram.DiagramClass_content_placeholder=Content
 
 # Live table generic keys
 diagram.livetable.doc.title=Page title
-diagram.livetable.doc.name=Page name
+diagram.livetable.doc.name=Diagram
 diagram.livetable.doc.space=Space
 diagram.livetable.doc.fullname=Page full name
 diagram.livetable.doc.author=Last Author
