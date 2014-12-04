@@ -169,7 +169,7 @@
     <property>
       <parameters>label=Diagram
 target=Diagram.WebHome
-icon=icon:vector</parameters>
+icon=icon:arrow_branch</parameters>
     </property>
     <property>
       <scope>wiki</scope>
