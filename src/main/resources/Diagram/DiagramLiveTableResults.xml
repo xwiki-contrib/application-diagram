@@ -22,9 +22,5 @@
   <minorEdit>false</minorEdit>
   <syntaxId>xwiki/2.1</syntaxId>
   <hidden>true</hidden>
-  <content>{{velocity output="false"}}
-$services.localization.use('document', 'Diagram.DiagramTranslations')
-{{/velocity}}
-
-{{include document="XWiki.LiveTableResults" /}}</content>
+  <content>{{include document="XWiki.LiveTableResults" /}}</content>
 </xwikidoc>
