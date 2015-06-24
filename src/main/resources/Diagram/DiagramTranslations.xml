@@ -57,8 +57,10 @@
       <scope>ON_DEMAND</scope>
     </property>
   </object>
-  <content># Titles
+  <content># Homepage
 diagram.home.title=Diagram
+diagram.app.title=Diagram
+diagram.home.description=Application qui crée des diagrammes et qui est basée sur [[draw.io>>https://www.draw.io/]].
 
 # Class fields
 Diagram.DiagramClass_content_placeholder=Content

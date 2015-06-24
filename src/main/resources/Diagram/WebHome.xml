@@ -103,7 +103,10 @@
       <columns>doc.name doc.date doc.author _actions</columns>
     </property>
     <property>
-      <description>Diagramming application based on [[draw.io&gt;&gt;https://www.draw.io/]].</description>
+      <description>{{velocity}}
+#set($discard = $services.localization.use('document', 'Diagram.DiagramTranslations'))
+$services.localization.render('diagram.home.description')
+{{/velocity}}</description>
     </property>
   </object>
   <object>
@@ -217,7 +220,7 @@
       <name>platform.panels.DiagramApplication</name>
     </property>
     <property>
-      <parameters>label=Diagram
+      <parameters>label=$services.localization.render('diagram.app.title')
 target=Diagram.WebHome
 icon=icon:arrow_branch</parameters>
     </property>

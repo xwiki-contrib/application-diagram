@@ -21,6 +21,7 @@
   <hidden>true</hidden>
   <content>{{include reference='AppWithinMinutes.LiveTableViewSheet'/}}
 {{velocity}}
+#set($discard = $services.localization.use('document', 'Diagram.DiagramTranslations'))
 #set($docextras=[])
 {{/velocity}}
 </content>
