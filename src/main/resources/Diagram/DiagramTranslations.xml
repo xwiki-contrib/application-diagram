@@ -57,7 +57,10 @@
       <scope>ON_DEMAND</scope>
     </property>
   </object>
-  <content># Class fields
+  <content># Titles
+diagram.home.title=Diagram
+
+# Class fields
 Diagram.DiagramClass_content_placeholder=Content
 
 # Live table generic keys
