@@ -58,8 +58,8 @@
     </property>
   </object>
   <content># Homepage
-diagram.home.title=Diagram
-diagram.app.title=Diagram
+diagram.home.title=Diagrams
+diagram.app.title=Diagrams
 diagram.home.description=Diagramming application based on [[draw.io>>https://www.draw.io/]].
 
 # Class fields
