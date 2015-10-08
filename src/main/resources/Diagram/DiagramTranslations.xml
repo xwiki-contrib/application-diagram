@@ -60,7 +60,7 @@
   <content># Homepage
 diagram.home.title=Diagrams
 diagram.app.title=Diagrams
-diagram.home.description=Diagramming application based on [[draw.io>>https://www.draw.io/]].
+diagram.home.description=Diagramming application based on [[draw.io&gt;&gt;https://www.draw.io/]].
 
 # Class fields
 Diagram.DiagramClass_content_placeholder=Content

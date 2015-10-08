@@ -42,7 +42,7 @@
   <content># Homepage
 diagram.home.title=Diagrammes
 diagram.app.title=Diagrammes
-diagram.home.description=Application qui crée des diagrammes et qui est basée sur [[draw.io>>https://www.draw.io/]].
+diagram.home.description=Application qui crée des diagrammes et qui est basée sur [[draw.io&gt;&gt;https://www.draw.io/]].
 
 # Class fields
 Diagram.DiagramClass_content_placeholder=Content
