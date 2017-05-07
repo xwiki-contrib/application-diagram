@@ -34,9 +34,7 @@
   <version>1.0.7-SNAPSHOT</version>
   <name>Diagram Application</name>
   <packaging>xar</packaging>
-  <description>Create various types of diagrams using draw.io
-
-This is a simple application created using AppWithinMinutes and integrating draw.io. It supports both editing and viewing diagrams. Each diagram is stored in a wiki page. It doesn't require any external services in order to work properly.</description>
+  <description>Create various types of diagrams using draw.io</description>
   <inceptionYear>2013</inceptionYear>
   <licenses>
     <license>
