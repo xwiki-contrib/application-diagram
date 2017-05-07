@@ -1,8 +1,17 @@
 Diagram Application
 ===================
 
-Create various types of diagrams using [draw.io](http://www.draw.io/).
+Create various types of diagrams using [draw.io](https://www.draw.io/).
 
-This is a simple application created using [AppWithinMinutes](http://extensions.xwiki.org/xwiki/bin/view/Extension/App+Within+Minutes+Application) and integrating [jgraph/draw.io](https://github.com/jgraph/draw.io). It supports both editing and viewing diagrams. Each diagram is stored in a wiki page. It doesn't require any external services in order to work properly.
+This is a simple application created using [AppWithinMinutes](http://extensions.xwiki.org/xwiki/bin/view/Extension/App+Within+Minutes+Application) and integrating [jgraph/draw.io](https://github.com/jgraph/draw.io/). It supports both editing and viewing diagrams. Each diagram is stored in a wiki page. It doesn't require any external services in order to work properly.
 
-Note that the [mxGraph library](http://www.jgraph.com/mxgraph.html) used by draw.io has a dual license. This application *inherits* the Open Source [Attribution-NonCommercial-ShareAlike 3.0](http://creativecommons.org/licenses/by-nc-sa/3.0/) license. Please do not use this application for commercial purposes *unless* you have bought a commercial license for the mxGraph library.
+* Project Lead: [Marius Dumitru Florea](http://www.xwiki.org/xwiki/bin/view/XWiki/mflorea)
+* [Documentation & Download](http://extensions.xwiki.org/xwiki/bin/view/Extension/Diagram+Application)
+* [Issue Tracker](http://jira.xwiki.org/browse/XADIAGRAM)
+* Communication: [Mailing List](http://dev.xwiki.org/xwiki/bin/view/Community/MailingLists>), [IRC]( http://dev.xwiki.org/xwiki/bin/view/Community/IRC)
+* [Development Practices](http://dev.xwiki.org)
+* Minimal XWiki version supported: XWiki 7.4
+* License: LGPL 2.1+ for the application code. **But** since the application code uses draw.io API that is licensed under GPLv3 the combination [is also **GPLv3**](http://www.gnu.org/licenses/gpl-faq.html#AllCompatibility).
+* Translations: N/A
+* Sonar Dashboard: N/A
+* Continuous Integration Status: [![Build Status](http://ci.xwiki.org/job/XWiki%20Contrib/job/application-diagram/job/master/badge/icon)](http://ci.xwiki.org/view/Contrib/job/XWiki%20Contrib/job/application-diagram/job/master/)
