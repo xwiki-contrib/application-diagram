@@ -25,28 +25,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.xwiki.commons</groupId>
-    <artifactId>xwiki-commons-pom</artifactId>
-    <version>4.5.3</version>
+    <groupId>org.xwiki.contrib</groupId>
+    <artifactId>parent-platform</artifactId>
+    <version>7.4-13</version>
   </parent>
-  <groupId>org.xwiki.contrib</groupId>
   <artifactId>application-diagram</artifactId>
-  <version>1.0.7-SNAPSHOT</version>
+  <version>1.1-SNAPSHOT</version>
   <name>Diagram Application</name>
   <packaging>xar</packaging>
   <description>Create various types of diagrams using draw.io</description>
   <inceptionYear>2013</inceptionYear>
-  <licenses>
-    <license>
-      <name>Attribution-NonCommercial-ShareAlike 3.0</name>
-      <url>http://creativecommons.org/licenses/by-nc-sa/3.0/</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
-  <issueManagement>
-    <system>jira</system>
-    <url>http://jira.xwiki.org/browse/XCONTRIB/component/12850</url>
-  </issueManagement>
   <developers>
     <developer>
       <id>mflorea</id>
@@ -56,22 +44,16 @@
   <scm>
     <connection>scm:git:git://github.com/xwiki-contrib/application-diagram.git</connection>
     <developerConnection>scm:git:git@github.com:xwiki-contrib/application-diagram.git</developerConnection>
-    <url>https://github.com/xwiki-contrib/application-diagram</url>
+    <url>https://github.com/xwiki-contrib/application-diagram/tree/master</url>
     <tag>HEAD</tag>
   </scm>
-  <distributionManagement>
-    <repository>
-      <id>xwiki-staging</id>
-      <name>XWiki Staging Repository</name>
-      <url>http://nexus.xwiki.org/nexus/service/local/staging/deploy/maven2/</url>
-    </repository>
-  </distributionManagement>
   <properties>
     <!-- Old names of this module used for retro compatibility when resolving dependencies of old extensions -->
     <xwiki.extension.features>
       mflorea:diagram-application,
       org.xwiki.contrib:diagram-application
     </xwiki.extension.features>
+    <xwiki.issueManagement.jira.id>XADIAGRAM</xwiki.issueManagement.jira.id>
     <!-- Don't run CLIRR here since there's no Java code. -->
     <xwiki.clirr.skip>true</xwiki.clirr.skip>
   </properties>
@@ -79,26 +61,43 @@
     <dependency>
       <groupId>org.xwiki.platform</groupId>
       <artifactId>xwiki-platform-appwithinminutes-ui</artifactId>
-      <version>${project.parent.version}</version>
+      <version>${platform.version}</version>
       <type>xar</type>
     </dependency>
+    <dependency>
+      <groupId>org.xwiki.platform</groupId>
+      <artifactId>xwiki-platform-sheet-ui</artifactId>
+      <version>${platform.version}</version>
+      <scope>runtime</scope>
+      <type>xar</type>
+    </dependency>
+    <!-- Rendering Macros -->
+    <dependency>
+      <groupId>org.xwiki.platform</groupId>
+      <artifactId>xwiki-platform-rendering-macro-velocity</artifactId>
+      <version>${platform.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.xwiki.rendering</groupId>
+      <artifactId>xwiki-rendering-macro-html</artifactId>
+      <version>${rendering.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <!-- WebJars -->
+    <dependency>
+      <groupId>org.webjars</groupId>
+      <artifactId>requirejs</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.webjars</groupId>
+      <artifactId>jquery</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.xwiki.contrib</groupId>
+      <artifactId>draw.io</artifactId>
+      <version>6.5.7</version>
+      <scope>runtime</scope>
+    </dependency>
   </dependencies>
-  <build>
-    <!-- Needed to add support for the XAR packaging -->
-    <extensions>
-      <extension>
-        <groupId>org.xwiki.commons</groupId>
-        <artifactId>xwiki-commons-tool-xar-handlers</artifactId>
-        <version>${commons.version}</version>
-      </extension>
-    </extensions>
-    <plugins>
-      <!-- The XAR packaging uses the XAR plugin and thus we need to define what version to use -->
-      <plugin>
-        <groupId>org.xwiki.commons</groupId>
-        <artifactId>xwiki-commons-tool-xar-plugin</artifactId>
-        <version>${commons.version}</version>
-      </plugin>
-    </plugins>
-  </build>
 </project>
