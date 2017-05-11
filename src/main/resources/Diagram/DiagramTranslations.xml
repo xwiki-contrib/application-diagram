@@ -68,7 +68,21 @@ diagram.livetable._actions.delete=Delete
 diagram.livetable.emptyvalue=-
 
 # Live table specific keys
-diagram.livetable.content_placeholder=Content</content>
+diagram.livetable.content_placeholder=Content
+
+# Diagram Macro
+rendering.macro.diagram.name=Diagram
+rendering.macro.diagram.description=Displays a diagram.
+rendering.macro.diagram.parameter.reference.name=Reference
+rendering.macro.diagram.parameter.reference.description=The reference of the page that contains the diagram to display.
+rendering.macro.diagram.parameter.cached.name=Cached
+rendering.macro.diagram.parameter.cached.description=Whether to display the cached diagram image (faster) instead of rendering the diagram live (slower).
+diagram.macro.invalidReference=The specified page is not a diagram.
+diagram.macro.viewNotAllowed=You are not allowed to view this diagram.
+diagram.macro.createNotAllowed=You are not allowed to create this diagram.
+diagram.macro.view=View diagram
+diagram.macro.edit=Edit diagram
+diagram.macro.create=Create diagram</content>
   <object>
     <name>Diagram.DiagramTranslations</name>
     <number>0</number>

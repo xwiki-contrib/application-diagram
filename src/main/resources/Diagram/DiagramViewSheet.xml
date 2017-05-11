@@ -44,7 +44,7 @@
 #if ($doc.getObject('Diagram.DiagramClass'))
   #set ($discard = $xwiki.ssx.use('Diagram.DiagramViewSheet'))
   #set ($discard = $xwiki.jsx.use('Diagram.DiagramViewSheet'))
-  &lt;div class="diagram loading" data-model="$escapetool.xml($tdoc.content)" /&gt;
+  &lt;div class="diagram loading" data-model="$escapetool.xml($tdoc.content)"&gt;&lt;/div&gt;
 #end
 {{/html}}
 {{/velocity}}</content>
@@ -504,7 +504,23 @@ require.config({
     </property>
     <property>
       <code>.diagram {
-  min-height: 20px;
+  min-height: 25px;
+}
+
+/**
+ * Diagram Macro
+ */
+.geDiagramContainer,
+.diagram-container &gt; .thumbnail {
+  max-width: 100%;
+}
+
+.diagram-container &gt; .thumbnail {
+  display: inline-block;
+}
+
+.diagram-container &gt; .thumbnail .box {
+  margin-bottom: 0;
 }</code>
     </property>
     <property>
