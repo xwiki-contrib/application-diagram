@@ -215,9 +215,11 @@
   #set ($createURL = $xwiki.getURL($reference, 'edit', $escapetool.url({
     'template': 'Diagram.DiagramTemplate'
   })))
-  &lt;a class="diagram-create btn btn-default" href="$createURL"&gt;
-    $escapetool.xml($services.localization.render('diagram.macro.create'))
-  &lt;/a&gt;
+  &lt;div&gt;
+    &lt;a class="diagram-create btn btn-default" href="$createURL"&gt;
+      $escapetool.xml($services.localization.render('diagram.macro.create'))
+    &lt;/a&gt;
+  &lt;/div&gt;
   {{/html}}
 #else
   {{warning}}$services.localization.render('diagram.macro.createNotAllowed'){{/warning}}
