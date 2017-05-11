@@ -42,7 +42,12 @@
   <minorEdit>false</minorEdit>
   <syntaxId>xwiki/2.1</syntaxId>
   <hidden>true</hidden>
+  <content/>
   <object>
+    <name>Diagram.DiagramTemplate</name>
+    <number>0</number>
+    <className>Diagram.DiagramClass</className>
+    <guid>5d8da0bc-6b9e-4474-a19e-fcbaa15f4e2b</guid>
     <class>
       <name>Diagram.DiagramClass</name>
       <customClass/>
@@ -52,23 +57,25 @@
       <defaultWeb/>
       <nameField/>
       <validationScript/>
-      <content_placeholder>
-        <customDisplay>{{include reference="AppWithinMinutes.Content"/}}</customDisplay>
+      <svg>
+        <contenttype>PureText</contenttype>
+        <customDisplay/>
         <disabled>0</disabled>
-        <name>content_placeholder</name>
+        <editor>PureText</editor>
+        <name>svg</name>
         <number>1</number>
-        <prettyName>Content</prettyName>
-        <script/>
+        <picker>0</picker>
+        <prettyName>SVG</prettyName>
+        <rows>5</rows>
+        <size>40</size>
         <unmodifiable>0</unmodifiable>
         <validationMessage/>
         <validationRegExp/>
-        <classType>com.xpn.xwiki.objects.classes.ComputedFieldClass</classType>
-      </content_placeholder>
+        <classType>com.xpn.xwiki.objects.classes.TextAreaClass</classType>
+      </svg>
     </class>
-    <name>Diagram.DiagramTemplate</name>
-    <number>0</number>
-    <className>Diagram.DiagramClass</className>
-    <guid>5d8da0bc-6b9e-4474-a19e-fcbaa15f4e2b</guid>
+    <property>
+      <svg/>
+    </property>
   </object>
-  <content/>
 </xwikidoc>

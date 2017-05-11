@@ -178,9 +178,8 @@
         #set ($diagramTitle = $diagram.plainTitle)
         #if ($diagram.getObject('Diagram.DiagramClass'))
           #if ($xcontext.action == 'edit' || $xcontext.macro.params.cached == 'true')
-            ## Display the cached diagram image in WYSIWYG edit mode, as a placeholder.
             {{html clean="false"}}
-            &lt;img src="$diagram.getAttachmentURL('diagram.png')" alt="$escapetool.xml($diagramTitle)" /&gt;
+            $!diagram.getValue('svg')
             {{/html}}
           #else
             {{display reference="$services.rendering.escape($reference, $xcontext.macro.doc.syntax)" /}}
@@ -370,7 +369,7 @@
       </name>
     </class>
     <property>
-      <defaultValue>false</defaultValue>
+      <defaultValue>true</defaultValue>
     </property>
     <property>
       <description>Whether to display the cached diagram image (faster) instead of rendering the diagram live (slower).</description>

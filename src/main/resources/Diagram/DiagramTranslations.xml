@@ -40,35 +40,23 @@
   <validationScript/>
   <comment/>
   <minorEdit>false</minorEdit>
-  <syntaxId>xwiki/2.1</syntaxId>
+  <syntaxId>plain/1.0</syntaxId>
   <hidden>true</hidden>
   <content># Homepage
-diagram.home.title=Diagrams
 diagram.app.title=Diagrams
-diagram.home.description=Diagramming application based on [[draw.io&gt;&gt;https://www.draw.io/]].
 
-# Class fields
-Diagram.DiagramClass_content_placeholder=Content
+# Template Provider
+diagram.template.name=Diagram
+diagram.template.description=Diagram page
 
-# Live table generic keys
-diagram.livetable.doc.title=Page title
-diagram.livetable.doc.name=Diagram
-diagram.livetable.doc.space=Space
-diagram.livetable.doc.fullname=Page full name
+# Live Table
+diagram.livetable.doc.location=Location
+diagram.livetable.doc.date=Update Date
 diagram.livetable.doc.author=Last Author
-diagram.livetable.doc.creator=Creator
-diagram.livetable.doc.date=Update date
-diagram.livetable.doc.creationDate=Creation date
-diagram.livetable._avatar=Avatar
-diagram.livetable._images=Images
-diagram.livetable._attachments=Attachments
 diagram.livetable._actions=Actions
 diagram.livetable._actions.edit=Edit
 diagram.livetable._actions.delete=Delete
 diagram.livetable.emptyvalue=-
-
-# Live table specific keys
-diagram.livetable.content_placeholder=Content
 
 # Diagram Macro
 rendering.macro.diagram.name=Diagram

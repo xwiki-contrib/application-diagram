@@ -49,6 +49,8 @@
   #set ($discard = $xwiki.jsx.use('Diagram.DiagramEditSheet'))
   &lt;div class="diagram-editor loading"&gt;
     &lt;input class="diagram-content" type="hidden" name="content" value="$escapetool.xml($tdoc.content)" /&gt;
+    &lt;input class="diagram-svg" type="hidden" name="Diagram.DiagramClass_0_svg"
+      value="$!escapetool.xml($doc.getValue('svg'))" /&gt;
   &lt;/div&gt;
 #end
 {{/html}}
@@ -377,6 +379,16 @@ define('diagramStore', ['jquery', 'draw.io', 'xwiki-events-bridge'], function($)
   // We need to update the form fields before the form is validated (for Preview, Save and Save &amp; Continue).
   $(document).on('xwiki:actions:beforePreview xwiki:actions:beforeSave', updateFormFields);
 
+  $(document).on('xwiki:actions:beforeSave', function() {
+    forEachOpenedFile(function(file) {
+      var svgInput = file.input.next('.diagram-svg');
+      if (svgInput.length &gt; 0) {
+        var svgRoot = file.getUi().editor.graph.getSvg('#ffffff', true, false, false, null, true);
+        svgInput.val(mxUtils.getXml(svgRoot));
+      }
+    });
+  });
+
   var submitInProgress = false;
   // Disable the leave confirmation when the form action buttons are used.
   $(document).on('xwiki:actions:cancel xwiki:actions:preview xwiki:actions:save xwiki:document:saved',
@@ -561,6 +573,21 @@ define('diagramStore', ['jquery', 'draw.io', 'xwiki-events-bridge'], function($)
         subMenu.enabled = subMenu.visible = false;
       }
     });
+  };
+
+  // Fix the base URL used when exporting the diagram as image.
+  var oldCreateImageUrlConverter = EditorUi.prototype.createImageUrlConverter;
+  EditorUi.prototype.createImageUrlConverter = function() {
+    var converter = oldCreateImageUrlConverter.call(this);
+    converter.convert = function(src) {
+      // Use baseDomain instead of baseUrl to detect external URLs.
+      if (src &amp;&amp; (src.substr(0, 7) === 'http://' || src.substr(0, 8) === 'https://') &amp;&amp;
+          src.substr(0, converter.baseDomain.length) !== converter.baseDomain) {
+        src = PROXY_URL + '?url=' + encodeURIComponent(src);
+      }
+      return src;
+    };
+    return converter;
   };
 
   //
