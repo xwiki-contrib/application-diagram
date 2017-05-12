@@ -177,7 +177,7 @@
         #set ($diagram = $xwiki.getDocument($reference))
         #set ($diagramTitle = $diagram.plainTitle)
         #if ($diagram.getObject('Diagram.DiagramClass'))
-          #if ($xcontext.action == 'edit' || $xcontext.macro.params.cached == 'true')
+          #if ($xcontext.action == 'edit' || ($xcontext.macro.params.cached == 'true' &amp;&amp; $xcontext.action != 'export'))
             {{html clean="false"}}
             $!diagram.getValue('svg')
             {{/html}}

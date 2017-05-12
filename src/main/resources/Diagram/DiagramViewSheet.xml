@@ -40,13 +40,27 @@
   <syntaxId>xwiki/2.1</syntaxId>
   <hidden>true</hidden>
   <content>{{velocity}}
-{{html clean="false"}}
 #if ($doc.getObject('Diagram.DiagramClass'))
-  #set ($discard = $xwiki.ssx.use('Diagram.DiagramViewSheet'))
-  #set ($discard = $xwiki.jsx.use('Diagram.DiagramViewSheet'))
-  &lt;div class="diagram loading" data-model="$escapetool.xml($tdoc.content)"&gt;&lt;/div&gt;
+  #if ($xcontext.action == 'get' &amp;&amp; $request.data == 'svg')
+    #set ($svg = $doc.getValue('svg'))
+    #if ("$!svg" == '')
+      #set ($svg = '&lt;svg/&gt;')
+    #end
+    #set ($discard = $response.setContentType('image/svg+xml'))
+    #set ($discard = $response.setContentLength($svg.length()))
+    #set ($discard = $response.writer.write($svg))
+  #elseif ($xcontext.action == 'export')
+    {{html clean="false"}}
+    &lt;img src="$doc.getURL('get', 'data=svg')" alt="$escapetool.xml($doc.plainTitle)" /&gt;
+    {{/html}}
+  #else
+    #set ($discard = $xwiki.ssx.use('Diagram.DiagramViewSheet'))
+    #set ($discard = $xwiki.jsx.use('Diagram.DiagramViewSheet'))
+    {{html clean="false"}}
+    &lt;div class="diagram loading" data-model="$escapetool.xml($tdoc.content)"&gt;&lt;/div&gt;
+    {{/html}}
+  #end
 #end
-{{/html}}
 {{/velocity}}</content>
   <object>
     <name>Diagram.DiagramViewSheet</name>
