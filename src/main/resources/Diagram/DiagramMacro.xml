@@ -203,7 +203,7 @@
         #if ($services.security.authorization.hasAccess('edit', $reference))
           &lt;a class="diagram-edit" href="$xwiki.getURL($reference, 'edit', $NULL)"
             title="$escapetool.xml($services.localization.render('diagram.macro.edit'))"
-            &gt;$services.icon.renderHTML('pencil')&lt;/a&gt;
+            target="_blank"&gt;$services.icon.renderHTML('pencil')&lt;/a&gt;
         #end
       &lt;/div&gt;
       {{/html}}
