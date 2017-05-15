@@ -163,8 +163,7 @@
       <code>{{velocity}}
 #set ($reference = $xcontext.macro.params.reference)
 #if ($stringtool.isEmpty($reference))
-  #set ($pageName = $xwiki.getUniquePageName($doc.space, 'Diagram'))
-  #set ($reference = $services.model.createDocumentReference($pageName, $doc.documentReference.parent))
+  #set ($reference = $services.model.createDocumentReference('Diagram', $doc.documentReference.parent))
 #else
   #set ($reference = $services.model.resolveDocument($reference))
 #end
