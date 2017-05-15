@@ -307,7 +307,7 @@
       <defaultValue/>
     </property>
     <property>
-      <description>The reference of the page that contains the diagram to display.</description>
+      <description>The reference of the page that contains the diagram to display. If the reference is empty the macro looks for a child page named "Diagram".</description>
     </property>
     <property>
       <mandatory>0</mandatory>
