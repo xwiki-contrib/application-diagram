@@ -543,6 +543,16 @@ define('diagramStore', ['jquery', 'draw.io', 'xwiki-events-bridge'], function($)
   };
 
   //
+  // Hide the editor footer.
+  //
+  var hideFooter = function(editorUI) {
+    // We call this just in case the footer is visible.
+    editorUI.hideFooter();
+    // Make sure the diagram editor doesn't leave space for the footer.
+    editorUI.footerHeight = 0;
+  };
+
+  //
   // Clean the editor menu by removing the features that are not needed.
   //
   var cleanMenu = function(editorUI) {
@@ -653,6 +663,28 @@ define('diagramStore', ['jquery', 'draw.io', 'xwiki-events-bridge'], function($)
     }
   };
 
+  var fullScreen = new XWiki.widgets.FullScreen();
+  var fixFullScreenToggle = function(editorUI) {
+    mxEvent.removeAllListeners(editorUI.fullscreenElement);
+    editorUI.container._x_fullScreenActivator = editorUI.fullscreenElement;
+    $(editorUI.fullscreenElement).click(function(event) {
+      event.preventDefault();
+      var isFullScreen = $(editorUI.container).parent('.fullScreenWrapper').length &gt; 0;
+      if (isFullScreen) {
+        // Exit full screen mode.
+        fullScreen.closeFullScreen();
+        editorUI.toggleCompactMode(true);
+      } else {
+        // Enter full screen mode.
+        fullScreen.makeFullScreen(editorUI.container);
+        // The previous line hides the 'fullScreenActivator' and shows the 'Exit Full Screen' button. We want to use the
+        // 'fullScreenActivator' for exiting the full screen mode. The 'Exit Full Screen' button is hidden from CSS.
+        $(editorUI.fullscreenElement).show();
+        editorUI.toggleCompactMode();
+      }
+    });
+  };
+
   //
   // jQuery plugin
   //
@@ -669,9 +701,11 @@ define('diagramStore', ['jquery', 'draw.io', 'xwiki-events-bridge'], function($)
         input: $(this).children('input.diagram-content')
       }, options));
       $(this).removeClass('loading');
+      hideFooter(editorUI);
       cleanMenu(editorUI);
       fixKeyboardShortcutsAction(editorUI);
       removeCompactModeToggle(editorUI);
+      fixFullScreenToggle(editorUI);
     });
   };
 
@@ -913,15 +947,16 @@ define('diagramStore', ['jquery', 'draw.io', 'xwiki-events-bridge'], function($)
   position: relative;
 }
 
-.diagram-editor .geFooterContainer {
-  display: none;
-}
-
 .diagram-editor input[type="checkbox"], .diagram-editor input[type="radio"],
 .mxPopupMenu input[type="checkbox"], .mxPopupMenu input[type="radio"],
 .mxWindow input[type="checkbox"], .mxWindow input[type="radio"],
 .geDialog input[type="checkbox"], .geDialog input[type="radio"] {
   vertical-align: text-bottom;
+}
+
+.fullScreenWrapper .buttons &gt; .buttonwrapper:first-child {
+  /* Hide the "Exit Full Screen" button. We have a tool bar entry for this. */
+  display: none !important;
 }
 
 /**
