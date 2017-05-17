@@ -535,6 +535,10 @@ require.config({
 
 .diagram-container &gt; .thumbnail .box {
   margin-bottom: 0;
+}
+
+.diagram-container &gt; .thumbnail svg {
+  max-width: 100%;
 }</code>
     </property>
     <property>

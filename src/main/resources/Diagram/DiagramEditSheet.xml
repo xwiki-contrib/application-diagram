@@ -207,12 +207,17 @@ require.config({
       deps: ['mxgraph-client', 'jscolor', 'sanitizer']
     },
     'draw.io': {
-      deps: ['mxgraph-editor', 'base64', 'pako', 'spinner']
+      deps: ['mxgraph-editor', 'base64', 'pako-global', 'spin-global']
     }
   }
 })
 
-define('spinner', ['spin'], function(spin) {
+define('pako-global', ['pako'], function(pako) {
+  // draw.io expects a global variable.
+  window.pako = pako;
+});
+
+define('spin-global', ['spin'], function(spin) {
   // draw.io expects a global variable.
   window.Spinner = spin;
 });</code>
