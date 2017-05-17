@@ -30,7 +30,7 @@
     <version>7.4-13</version>
   </parent>
   <artifactId>application-diagram</artifactId>
-  <version>1.2</version>
+  <version>1.3-SNAPSHOT</version>
   <name>Diagram Application</name>
   <packaging>xar</packaging>
   <description>Create various types of diagrams using draw.io</description>
@@ -45,7 +45,7 @@
     <connection>scm:git:git://github.com/xwiki-contrib/application-diagram.git</connection>
     <developerConnection>scm:git:git@github.com:xwiki-contrib/application-diagram.git</developerConnection>
     <url>https://github.com/xwiki-contrib/application-diagram/tree/master</url>
-    <tag>application-diagram-1.2</tag>
+    <tag>HEAD</tag>
   </scm>
   <properties>
     <!-- Old names of this module used for retro compatibility when resolving dependencies of old extensions -->
