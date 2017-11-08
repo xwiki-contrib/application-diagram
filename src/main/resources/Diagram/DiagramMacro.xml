@@ -160,15 +160,8 @@
       </visibility>
     </class>
     <property>
-      <code>{{velocity}}
-#set ($reference = $xcontext.macro.params.reference)
-#if ($stringtool.isEmpty($reference))
-  #set ($reference = $services.model.createDocumentReference('Diagram', $doc.documentReference.parent))
-#else
-  #set ($reference = $services.model.resolveDocument($reference))
-#end
-#if ($xwiki.exists($reference))
-  ## Try to display the diagram.
+      <code>{{velocity output="false"}}
+#macro (displayDiagram $reference)
   #set ($discard = $xwiki.ssx.use('Diagram.DiagramViewSheet'))
   (% class="diagram-container" %)(((
     (% class="thumbnail" %)(((
@@ -209,7 +202,9 @@
       {{/html}}
     )))
   )))
-#elseif ($services.security.authorization.hasAccess('edit', $reference))
+#end
+
+#macro (createDiagram $reference)
   {{html clean="false"}}
   #set ($createURL = $xwiki.getURL($reference, 'edit', $escapetool.url({
     'template': 'Diagram.DiagramTemplate'
@@ -220,8 +215,35 @@
     &lt;/a&gt;
   &lt;/div&gt;
   {{/html}}
+#end
+
+#macro (executeDiagramMacro)
+  #set ($reference = $xcontext.macro.params.reference)
+  #if ($stringtool.isEmpty($reference))
+    #set ($reference = $services.model.createDocumentReference('Diagram', $doc.documentReference.parent))
+  #else
+    #set ($reference = $services.model.resolveDocument($reference))
+  #end
+  #if ($xwiki.exists($reference))
+    #displayDiagram($reference)
+  #elseif ($services.security.authorization.hasAccess('edit', $reference))
+    #createDiagram($reference)
+  #else
+    {{warning}}$services.localization.render('diagram.macro.createNotAllowed'){{/warning}}
+  #end
+#end
+{{/velocity}}
+
+{{velocity}}
+## We need to check if there is a valid license because the macro is registered even if the user doesn't have view right
+## on the macro definition page. See XWIKI-14828: Rendering macros defined in wiki pages are available to users that
+## don't have view right on those pages.
+#if ($services.licensing.licensor.hasLicensureForEntity($xcontext.macro.doc.documentReference))
+  #executeDiagramMacro
 #else
-  {{warning}}$services.localization.render('diagram.macro.createNotAllowed'){{/warning}}
+  {{error}}
+    {{translation key="diagram.app.noValidLicense" /}}
+  {{/error}}
 #end
 {{/velocity}}</code>
     </property>
