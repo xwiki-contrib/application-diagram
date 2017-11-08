@@ -5,7 +5,7 @@ Create various types of diagrams using [draw.io](https://www.draw.io/).
 
 This application integrates [jgraph/draw.io](https://github.com/jgraph/draw.io/) and supports both editing and viewing diagrams. Each diagram is stored in a wiki page. It doesn't require any external services in order to work properly.
 
-* Project Lead: [Marius Dumitru Florea](http://www.xwiki.org/xwiki/bin/view/XWiki/mflorea)
+* Project Lead: [Marius Dumitru Florea](https://github.com/mflorea)
 * [Documentation](https://store.xwiki.com/xwiki/bin/view/Extension/DiagramApplication)
 * [Development Practices](http://dev.xwiki.org)
 * Minimal XWiki version supported: XWiki 8.4
