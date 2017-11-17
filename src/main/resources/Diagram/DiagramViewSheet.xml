@@ -51,7 +51,7 @@
     #set ($discard = $response.writer.write($svg))
   #elseif ($xcontext.action == 'export')
     {{html clean="false"}}
-    &lt;img src="$doc.getURL('get', 'data=svg')" alt="$escapetool.xml($doc.plainTitle)" /&gt;
+    &lt;img src="$doc.getURL('get', "data=svg&amp;v=$!doc.version")" alt="$escapetool.xml($doc.plainTitle)" /&gt;
     {{/html}}
   #else
     #set ($discard = $xwiki.ssx.use('Diagram.DiagramViewSheet'))
