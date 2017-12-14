@@ -44,7 +44,7 @@
   <hidden>true</hidden>
   <content># Homepage
 diagram.app.title=Diagrams
-diagram.app.noValidLicense=There is no valid license for the Diagram Application (Pro).
+diagram.extension.name=Diagram Application (Pro)
 
 # Template Provider
 diagram.template.name=Diagram

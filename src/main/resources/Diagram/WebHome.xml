@@ -37,9 +37,11 @@
   <title>$services.localization.render('diagram.app.title')</title>
   <comment/>
   <minorEdit>false</minorEdit>
-  <syntaxId>xwiki/2.0</syntaxId>
+  <syntaxId>xwiki/2.1</syntaxId>
   <hidden>false</hidden>
-  <content>{{velocity output="false"}}
+  <content>{{include reference="Licenses.Code.VelocityMacros"/}}
+
+{{velocity output="false"}}
 #macro (diagramLiveTable)
   #set ($columnsProperties = {
     'doc.location': {"type":"text","size":20,"html":true},
@@ -65,9 +67,7 @@
 #if ($services.licensing.licensor.hasLicensureForEntity($diagramClassReference))
   #diagramLiveTable
 #else
-  {{error}}
-    {{translation key="diagram.app.noValidLicense" /}}
-  {{/error}}
+  {{error}}#getMissingLicenseMessage('diagram.extension.name'){{/error}}
 #end
 {{/velocity}}</content>
   <object>
