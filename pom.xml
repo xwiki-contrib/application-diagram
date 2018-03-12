@@ -33,6 +33,10 @@
   <name>Diagram Application (Pro)</name>
   <packaging>xar</packaging>
   <description>Create various types of diagrams using draw.io</description>
+  <issueManagement>
+    <system>GitHub</system>
+    <url>https://github.com/xwikisas/application-diagram/issues</url>
+  </issueManagement>
   <scm>
     <connection>scm:git:git://github.com/xwikisas/application-diagram.git</connection>
     <developerConnection>scm:git:git@github.com:xwikisas/application-diagram.git</developerConnection>
