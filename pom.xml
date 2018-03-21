@@ -52,6 +52,7 @@
     <xwiki.extension.licensing.publicDocuments>
       Diagram.WebHome
     </xwiki.extension.licensing.publicDocuments>
+    <xwiki.extension.category>application</xwiki.extension.category>
   </properties>
   <dependencies>
     <!-- This extension requires a license to work. -->
