@@ -523,7 +523,8 @@ define('diagramStore', ['jquery', 'draw.io', 'xwiki-events-bridge'], function($)
     options = options || {};
     var editorUI = new App(new Editor(false, options.themes), options.container);
     var file = diagramStore.createFile(editorUI, options.input, options.fileName);
-    editorUI.loadFile(options.fileName, true, file);
+    // The first letter of the file name is used to determine the storage type. Let's use 'X' for XWiki storage.
+    editorUI.loadFile('X' + options.fileName, true, file);
     return editorUI;
   };
 
