@@ -197,6 +197,7 @@ require.config({
     'base64': diagramEditorBasePath + 'js/deflate/base64.min',
     'pako': diagramEditorBasePath + 'js/deflate/pako.min',
     'spin': diagramEditorBasePath + 'js/spin/spin.min',
+    'jszip': diagramEditorBasePath + 'js/jszip/jszip.min',
     'draw.io': diagramEditorBasePath + 'js/draw.io.min',
   },
   shim: {
@@ -207,7 +208,7 @@ require.config({
       deps: ['mxgraph-client', 'jscolor', 'sanitizer']
     },
     'draw.io': {
-      deps: ['mxgraph-editor', 'base64', 'pako-global', 'spin-global']
+      deps: ['mxgraph-editor', 'base64', 'pako-global', 'spin-global', 'jszip']
     }
   }
 })
