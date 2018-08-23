@@ -590,6 +590,10 @@ define('diagramStore', ['jquery', 'draw.io', 'xwiki-events-bridge'], function($)
         subMenu.enabled = subMenu.visible = false;
       }
     });
+
+    // Remove the language picker because the diagram editor is configured to use the XWiki language.
+    // The language picker menu entry is not added like the rest so we can't simply disable it.
+    $('body &gt; .geItem &gt; .geIcon.geSprite-globe').last().parent().remove();
   };
 
   // Fix the base URL used when exporting the diagram as image.
