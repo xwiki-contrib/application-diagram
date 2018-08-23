@@ -181,11 +181,13 @@ var urlParams = (function(params) {
   // Disable Google Analytics.
   'analytics': '0',
   // Disable the One Drive integration.
-  'od': '0'
+  'od': '0',
+  // Disable the Trello integration.
+  'tr': '0'
 });
 
 // Disabling the integration with these external services is not enough because the draw.io code has hard-coded references.
-var DriveFile = DropboxFile = GitHubFile = OneDriveFile = false;
+var DriveFile = DropboxFile = GitHubFile = OneDriveFile = TrelloFile = false;
 
 require.config({
   paths: {
