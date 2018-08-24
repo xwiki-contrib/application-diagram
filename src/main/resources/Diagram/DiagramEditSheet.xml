@@ -151,6 +151,7 @@ var RESOURCE_BASE = RESOURCES_PATH + '/dia';
 var STENCIL_PATH = diagramEditorBasePath + 'stencils';
 var IMAGE_PATH = diagramEditorBasePath + 'images';
 var STYLE_PATH = CSS_PATH = diagramEditorBasePath + 'styles';
+var OPEN_FORM = diagramEditorBasePath + 'open.html';
 
 var SHAPES_PATH = diagramEditorBasePath + 'shapes';
 var GRAPH_IMAGE_PATH = diagramEditorBasePath + 'img';
