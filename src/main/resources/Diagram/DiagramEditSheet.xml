@@ -156,6 +156,8 @@ var SHAPES_PATH = diagramEditorBasePath + 'shapes';
 var GRAPH_IMAGE_PATH = diagramEditorBasePath + 'img';
 var TEMPLATE_PATH = diagramEditorBasePath + 'templates';
 
+var PROXY_URL = new XWiki.Document('DiagramProxy', 'Diagram').getURL('get');
+
 var isLocalStorage = true;
 
 var urlParams = (function(params) {
