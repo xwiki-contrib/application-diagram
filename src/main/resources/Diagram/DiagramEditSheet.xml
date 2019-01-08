@@ -709,6 +709,11 @@ define('diagramStore', ['jquery', 'draw.io', 'xwiki-events-bridge'], function($)
     return this.on('click', 'button', function(event) {
       // Make sure the buttons from the editor UI don't submit the edit form.
       event.preventDefault();
+    }).on('keydown keyup keypress', '.geContentEditable', function(event) {
+      // Make sure the keyboard events triggered from the nested editable sections are not propagated as they may
+      // trigger shortcut keys (the nested editable sections need to behave like input fields).
+      // See issue #15: If you install XWebIDE Application you can't use "W" letter in the diagram text.
+      event.stopPropagation();
     }).each(function() {
       var editorUI = createDiagramEditor($.extend({
         container: this,
