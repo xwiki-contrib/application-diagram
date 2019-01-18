@@ -40,30 +40,33 @@
   <syntaxId>xwiki/2.1</syntaxId>
   <hidden>true</hidden>
   <content># Homepage
-diagram.home.title=Diagrammes
 diagram.app.title=Diagrammes
-diagram.home.description=Application qui crée des diagrammes et qui est basée sur [[draw.io&gt;&gt;https://www.draw.io/]].
+diagram.extension.name=Diagram Application (Pro)
 
-# Class fields
-Diagram.DiagramClass_content_placeholder=Content
+# Template Provider
+diagram.template.name=Diagramme
+diagram.template.description=Page Diagramme
 
-# Live table generic keys
-diagram.livetable.doc.title=Titre de la page
-diagram.livetable.doc.name=Diagramme
-diagram.livetable.doc.space=Espace
-diagram.livetable.doc.fullname=Nom complet de la page
-diagram.livetable.doc.author=Dernier auteur
-diagram.livetable.doc.creator=Créateur
-diagram.livetable.doc.date=Date de mise à jour
-diagram.livetable.doc.creationDate=Date de création
-diagram.livetable._avatar=Avatar
-diagram.livetable._images=Images
-diagram.livetable._attachments=Pièces Jointes
+# Live Table
 diagram.livetable._actions=Actions
-diagram.livetable._actions.edit=Modifier
 diagram.livetable._actions.delete=Supprimer
+diagram.livetable._actions.edit=Modifier
+diagram.livetable.doc.author=Dernier auteur
+diagram.livetable.doc.date=Date de mise à jour
+diagram.livetable.doc.location=Emplacement
 diagram.livetable.emptyvalue=-
 
-# Live table specific keys
-diagram.livetable.content_placeholder=Content</content>
+# Diagram Macro
+rendering.macro.diagram.description=Affiche une diagramme.
+rendering.macro.diagram.name=Diagramme
+rendering.macro.diagram.parameter.cached.description=Afficher une image d'une diagramme cachée (plus rapide) au lieu de rendre la diagramme en live (plus lent).
+rendering.macro.diagram.parameter.cached.name=Caché
+rendering.macro.diagram.parameter.reference.description=rendering.macro.diagram.parameter.reference.description=La référence vers la page qui contient la diagramme à afficher. Ex. pour "http:~/~/.../Diagram/My%20Diagram/", rentrez "Diagram.My Diagram.WebHome". Si ce champ est laissé vide, la macro cherche pour une page-enfant nommée "Diagramme" et, si pas trouvée, affiche un formulaire qui permet la création d'une diagramme.
+rendering.macro.diagram.parameter.reference.name=Reférence
+diagram.macro.create=Créer diagramme
+diagram.macro.createNotAllowed=Vous n'êtes pas autorisé à créer cette diagramme.
+diagram.macro.edit=Modifier diagramme
+diagram.macro.invalidReference=La page spécifiée n'est pas une diagramme.
+diagram.macro.view=Voir diagramme
+diagram.macro.viewNotAllowed=Vous n'êtes pas autorisé à voir cette diagramme.</content>
 </xwikidoc>

@@ -47,31 +47,31 @@ diagram.app.title=Diagrams
 diagram.extension.name=Diagram Application (Pro)
 
 # Template Provider
-diagram.template.name=Diagram
 diagram.template.description=Diagram page
+diagram.template.name=Diagram
 
 # Live Table
-diagram.livetable.doc.location=Location
-diagram.livetable.doc.date=Update Date
-diagram.livetable.doc.author=Last Author
 diagram.livetable._actions=Actions
-diagram.livetable._actions.edit=Edit
 diagram.livetable._actions.delete=Delete
+diagram.livetable._actions.edit=Edit
+diagram.livetable.doc.author=Last Author
+diagram.livetable.doc.date=Update Date
+diagram.livetable.doc.location=Location
 diagram.livetable.emptyvalue=-
 
 # Diagram Macro
-rendering.macro.diagram.name=Diagram
 rendering.macro.diagram.description=Displays a diagram.
-rendering.macro.diagram.parameter.reference.name=Reference
-rendering.macro.diagram.parameter.reference.description=rendering.macro.diagram.parameter.reference.description=The reference of the page that contains the diagram to display. E.g. for "http://.../Diagram/My%20Diagram/", enter "Diagram.My Diagram.WebHome". If this field is left blank, the macro looks for a child page named "Diagram" and if not found, displays a form to create a diagram.
-rendering.macro.diagram.parameter.cached.name=Cached
+rendering.macro.diagram.name=Diagram
 rendering.macro.diagram.parameter.cached.description=Whether to display the cached diagram image (faster) instead of rendering the diagram live (slower).
-diagram.macro.invalidReference=The specified page is not a diagram.
-diagram.macro.viewNotAllowed=You are not allowed to view this diagram.
+rendering.macro.diagram.parameter.cached.name=Cached
+rendering.macro.diagram.parameter.reference.description=rendering.macro.diagram.parameter.reference.description=The reference of the page that contains the diagram to display. E.g. for "http://.../Diagram/My%20Diagram/", enter "Diagram.My Diagram.WebHome". If this field is left blank, the macro looks for a child page named "Diagram" and if not found, displays a form to create a diagram.
+rendering.macro.diagram.parameter.reference.name=Reference
+diagram.macro.create=Create diagram
 diagram.macro.createNotAllowed=You are not allowed to create this diagram.
-diagram.macro.view=View diagram
 diagram.macro.edit=Edit diagram
-diagram.macro.create=Create diagram</content>
+diagram.macro.invalidReference=The specified page is not a diagram.
+diagram.macro.view=View diagram
+diagram.macro.viewNotAllowed=You are not allowed to view this diagram.</content>
   <object>
     <name>Diagram.DiagramTranslations</name>
     <number>0</number>
