@@ -73,6 +73,34 @@
   <object>
     <name>Diagram.WebHome</name>
     <number>0</number>
+    <className>XWiki.DefaultPageTemplateClass</className>
+    <guid>312b9f4c-06b8-4e9d-909e-b2735fb8b3a0</guid>
+    <class>
+      <name>XWiki.DefaultPageTemplateClass</name>
+      <customClass/>
+      <customMapping/>
+      <defaultViewSheet/>
+      <defaultEditSheet/>
+      <defaultWeb/>
+      <nameField/>
+      <validationScript/>
+      <defaultPageTemplate>
+        <disabled>0</disabled>
+        <name>defaultPageTemplate</name>
+        <number>1</number>
+        <prettyName>defaultPageTemplate</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </defaultPageTemplate>
+    </class>
+    <property>
+      <defaultPageTemplate>Diagram.DiagramTemplateProvider</defaultPageTemplate>
+    </property>
+  </object>
+  <object>
+    <name>Diagram.WebHome</name>
+    <number>0</number>
     <className>XWiki.UIExtensionClass</className>
     <guid>2f063065-8493-4fbf-908e-43059533b07b</guid>
     <class>
