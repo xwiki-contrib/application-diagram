@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <!--
  * See the NOTICE file distributed with this work for additional
  * information regarding copyright ownership.
@@ -38,70 +39,82 @@
   <minorEdit>false</minorEdit>
   <syntaxId>xwiki/2.1</syntaxId>
   <hidden>true</hidden>
-  <content>{{info}}
-This page contains a script for migrating diagram pages after an upgrade of the diagram application to the pro version of the application. It will update the paths containing the version of the draw.io library with the version currently used by the application.
+  <content>{{velocity}}
 
-{{html}}
-  &lt;form action="" method="post"&gt;
-  &lt;input class="btn btn-default" type="submit" name="preview" value="Preview"/&gt;
-  &lt;input class="btn btn-default" type="submit" name="execute" value="Execute"/&gt;
-  &lt;/form&gt;
-{{/html}}
+#macro(selectDiagramsRequiringMigration)
+  #set ($repository = $services.extension.getRepository('installed'))
+  #set ($extension = $services.extension.installed.getInstalledExtension('org.xwiki.contrib:draw.io', "wiki:$xcontext.database"))
+  #if ($extension != $NULL)
+    #set ($targetVersion = $extension.version)
+  #end
+  #if ($targetVersion)
+    #set ($migrationIsRequiredClause = " and doc.content like '%draw.io%' and doc.content not like '%draw.io/$targetVersion/%'")
+    #set ($hql = "select doc.fullName from XWikiDocument as doc, BaseObject as obj where obj.name = doc.fullName and obj.className='Diagram.DiagramClass' and doc.fullName &lt;&gt; 'Diagram.DiagramTemplate' $migrationIsRequiredClause")
+    #set ($toBeMigratedEntries = $services.query.hql($hql).execute())
+  #end
+#end
 
-{{/info}}
+## Display the content below only if the page is not included by another one.
+#if ($doc.name == 'MigrationScript')
+  {{info}}
+  This page contains a script for migrating diagram pages after an upgrade of the diagram application. It will update the paths containing the version of the draw.io library with the version currently used by the application. The script is a temporary solution until the bug //[[Paths to images inserted into diagrams become invalid at upgrade&gt;&gt;https://github.com/xwikisas/application-diagram/issues/11]]// gets fixed.
+  {{html clean="false"}}
+    &lt;form action="" method="post"&gt;
+    &lt;input class="btn btn-default" type="submit" name="execute" value="Execute"/&gt;
+    &lt;input type="hidden" name="form_token" value="$!{services.csrf.token}" /&gt;
+    &lt;/form&gt;
+  {{/html}}
 
-{{groovy}}
-  
+  {{/info}}
 
-String getDependencyVersion(String extensionId, String dependencyId) {
+  == Diagrams requiring a migration ==
 
-  def extensionManager = services.extension
-  def repository = extensionManager.getRepository('installed')
+  #selectDiagramsRequiringMigration()
+  {{info}}
+  #if (!$targetVersion)
+   No version of draw.io was found, please make sure that the Diagram Application is installed (either [[pro&gt;&gt;https://store.xwiki.com/xwiki/bin/view/Extension/DiagramApplication]] or [[non-pro&gt;&gt;https://extensions.xwiki.org/xwiki/bin/view/Extension/Diagram%20Application]] version).
+  #else
+    The target draw.io version found is : $targetVersion.
+  #end
+  {{/info}}
 
-  def extensions = services.extension.installed.getInstalledExtensions()
-  for (extension in extensions) {
-    if ("$extension.id".indexOf(extensionId) == 0) {
-      for (dependency in extension.dependencies) {
-        if (dependency.id.indexOf(dependencyId) == 0) {
-          return dependency.versionConstraint
-        }
-      }
-    }
-  }
-  return "No version found, make sure the extension $extensionId is installed."
-}
+  #if ($targetVersion)
+    #set ($columnsProperties = {
+      'doc.location': {"type":"text","size":20,"html":true},
+      'doc.date': {"type":"text","size":10},
+      'doc.author': {"type":"text","size":10,"link":"author"},
+      '_actions': {"sortable":false,"filterable":false,"html":true,"actions":["edit","delete"]}
+    })
+    #set ($options = {
+      'className': 'Diagram.DiagramClass',
+      'resultPage': 'Diagram.MigrationScriptLiveTableResults',
+      'translationPrefix': 'diagram.livetable.',
+      'tagCloud': true,
+      'rowCount': 15,
+      'maxPages': 10,
+      'extraParams': "migrationIsRequiredClause=$escapetool.url($migrationIsRequiredClause)"
+    })
+    #set ($columns = ['doc.location', 'doc.date', 'doc.author', '_actions'])
+    #livetable('diagrams-to-be-migrated' $columns $columnsProperties $options)
 
-if (request.preview || request.execute) {
-  def targetVersion = getDependencyVersion("com.xwiki.diagram:application-diagram", "org.xwiki.contrib:draw.io")
+    #if (("$!request.execute" != '') &amp;&amp; $services.csrf.isTokenValid($request.getParameter("form_token")))
+      == Migration ==
 
-  println "The target draw.io version found is : $targetVersion."
+     |=Diagram|=Migration note
+      #foreach ($entry in $toBeMigratedEntries)
+        #set ($page = $xwiki.getDocument($entry))
+        #set ($content = $page.content)
+        #set ($migratedContent = $content.replaceAll('draw\.io\/([^\/]*)\/img', "draw.io/$targetVersion/img"))
+        #set ($discard = $page.setContent($migratedContent))
+        #set ($discard = $page.save("Migration to draw.io $targetVersion"))
+        |[[$entry]]|Diagram was migrated to draw.io $targetVersion.
+      #end
+    #end
+  #end
+#end
+{{/velocity}}
 
-  def hql = "select doc.fullName from XWikiDocument as doc, BaseObject as obj where obj.name = doc.fullName and obj.className='Diagram.DiagramClass' and doc.fullName &lt;&gt; 'Diagram.DiagramTemplate'"
-
-  def entries = services.query.hql(hql).execute()
-
-  println "|=Page name|=Migration"
-  
-  for (entry in entries) {
-    if (request.execute) {
-      def page = xwiki.getDocument(entry)
-      def migratedContent = page.content.replaceAll(/draw\.io\/([^\/]*)\/img/) { all, version -&gt; 
-        "draw.io/$targetVersion/img" 
-      }
-      if (migratedContent != page.content) {
-        page.setContent(migratedContent)
-        page.save("Migration to draw.io $targetVersion")
-        println "|[[$entry]]|Page was migrated to draw.io $targetVersion"
-      } else {
-        println "|[[$entry]]|No migration was needed."
-      }
-    } else {
-      println "|[[$entry]]|Page will get migrated to draw.io $targetVersion."
-    }
-  }
-}
-  
-{{/groovy}}</content>
+</content>
   <object>
     <name>Diagram.MigrationScript</name>
     <number>0</number>
