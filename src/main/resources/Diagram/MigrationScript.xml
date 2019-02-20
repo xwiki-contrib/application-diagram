@@ -39,44 +39,30 @@
   <minorEdit>false</minorEdit>
   <syntaxId>xwiki/2.1</syntaxId>
   <hidden>true</hidden>
-  <content>{{velocity}}
+  <content>{{include reference="Diagram.MigrationScriptMacros"/}}
 
-#macro(selectDiagramsRequiringMigration)
-  #set ($repository = $services.extension.getRepository('installed'))
-  #set ($extension = $services.extension.installed.getInstalledExtension('org.xwiki.contrib:draw.io', "wiki:$xcontext.database"))
-  #if ($extension != $NULL)
-    #set ($targetVersion = $extension.version)
-  #end
-  #if ($targetVersion)
-    #set ($migrationIsRequiredClause = " and doc.content like '%draw.io%' and doc.content not like '%draw.io/$targetVersion/%'")
-    #set ($hql = "select doc.fullName from XWikiDocument as doc, BaseObject as obj where obj.name = doc.fullName and obj.className='Diagram.DiagramClass' and doc.fullName &lt;&gt; 'Diagram.DiagramTemplate' $migrationIsRequiredClause")
-    #set ($toBeMigratedEntries = $services.query.hql($hql).execute())
-  #end
-#end
+{{velocity}}
 
-## Display the content below only if the page is not included by another one.
-#if ($doc.name == 'MigrationScript')
-  {{info}}
+{{info}}
   This page contains a script for migrating diagram pages after an upgrade of the diagram application. It will update the paths containing the version of the draw.io library with the version currently used by the application. The script is a temporary solution until the bug //[[Paths to images inserted into diagrams become invalid at upgrade&gt;&gt;https://github.com/xwikisas/application-diagram/issues/11]]// gets fixed.
   {{html clean="false"}}
     &lt;form action="" method="post"&gt;
     &lt;input class="btn btn-default" type="submit" name="execute" value="Execute"/&gt;
     &lt;input type="hidden" name="form_token" value="$!{services.csrf.token}" /&gt;
     &lt;/form&gt;
-  {{/html}}
+{{/html}}
 
-  {{/info}}
+{{/info}}
 
   == Diagrams requiring a migration ==
 
-  #selectDiagramsRequiringMigration()
   {{info}}
   #if (!$targetVersion)
    No version of draw.io was found, please make sure that the Diagram Application is installed (either [[pro&gt;&gt;https://store.xwiki.com/xwiki/bin/view/Extension/DiagramApplication]] or [[non-pro&gt;&gt;https://extensions.xwiki.org/xwiki/bin/view/Extension/Diagram%20Application]] version).
   #else
     The target draw.io version found is : $targetVersion.
   #end
-  {{/info}}
+{{/info}}
 
   #if ($targetVersion)
     #set ($columnsProperties = {
@@ -91,8 +77,7 @@
       'translationPrefix': 'diagram.livetable.',
       'tagCloud': true,
       'rowCount': 15,
-      'maxPages': 10,
-      'extraParams': "migrationIsRequiredClause=$escapetool.url($migrationIsRequiredClause)"
+      'maxPages': 10
     })
     #set ($columns = ['doc.location', 'doc.date', 'doc.author', '_actions'])
     #livetable('diagrams-to-be-migrated' $columns $columnsProperties $options)
@@ -111,47 +96,5 @@
       #end
     #end
   #end
-#end
-{{/velocity}}
-
-</content>
-  <object>
-    <name>Diagram.MigrationScript</name>
-    <number>0</number>
-    <className>XWiki.RequiredRightClass</className>
-    <guid>930a64c2-31f3-4b02-93b7-df84b7d2fe34</guid>
-    <class>
-      <name>XWiki.RequiredRightClass</name>
-      <customClass/>
-      <customMapping/>
-      <defaultViewSheet/>
-      <defaultEditSheet/>
-      <defaultWeb/>
-      <nameField/>
-      <validationScript/>
-      <level>
-        <cache>0</cache>
-        <disabled>0</disabled>
-        <displayType>select</displayType>
-        <multiSelect>0</multiSelect>
-        <name>level</name>
-        <number>1</number>
-        <picker>0</picker>
-        <prettyName>level</prettyName>
-        <relationalStorage>0</relationalStorage>
-        <separator> </separator>
-        <separators> ,|</separators>
-        <size>1</size>
-        <sort>none</sort>
-        <unmodifiable>0</unmodifiable>
-        <validationMessage/>
-        <validationRegExp/>
-        <values>edit|programming</values>
-        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
-      </level>
-    </class>
-    <property>
-      <level>programming</level>
-    </property>
-  </object>
+{{/velocity}}</content>
 </xwikidoc>
