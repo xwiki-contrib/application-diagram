@@ -234,6 +234,8 @@
 #end
 {{/velocity}}
 
+{{include reference="Licenses.Code.VelocityMacros"/}}
+
 {{velocity}}
 ## We need to check if there is a valid license because the macro is registered even if the user doesn't have view right
 ## on the macro definition page. See XWIKI-14828: Rendering macros defined in wiki pages are available to users that
@@ -242,7 +244,7 @@
   #executeDiagramMacro
 #else
   {{error}}
-    {{translation key="diagram.app.noValidLicense" /}}
+    #getMissingLicenseMessage('diagram.extension.name')
   {{/error}}
 #end
 {{/velocity}}</code>
