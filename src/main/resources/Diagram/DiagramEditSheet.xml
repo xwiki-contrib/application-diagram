@@ -702,6 +702,16 @@ define('diagramStore', ['jquery', 'draw.io', 'xwiki-events-bridge'], function($)
   };
 
   //
+  // Add the type of the buttons manually to stop the default submit. The preventDefault used in editDiagram is not
+  // working for these since in draw.io code is called stopPropagation.
+  //
+  var fixEditorButtons = function(editor) {
+    editor.find('button:not([type])').each(function() {
+      $(this).attr('type', 'button');
+    });
+  };
+
+  //
   // jQuery plugin
   //
   var themes = {};
@@ -727,6 +737,7 @@ define('diagramStore', ['jquery', 'draw.io', 'xwiki-events-bridge'], function($)
       fixKeyboardShortcutsAction(editorUI);
       removeCompactModeToggle(editorUI);
       fixFullScreenToggle(editorUI);
+      fixEditorButtons($(this));
     });
   };
 
