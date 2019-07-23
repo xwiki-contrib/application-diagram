@@ -48,7 +48,7 @@
     #set ($targetVersion = $extension.version)
   #end
   #if ($targetVersion)
-    #set ($migrationIsRequiredClause = " and doc.content like '%draw.io%' and doc.content not like '%draw.io/$targetVersion/%'")
+    #set ($migrationIsRequiredClause = " and doc.content like '%/webjars%/draw.io/%' and doc.content not like '%/draw.io/$targetVersion/%'")
     #set ($hql = "select doc.fullName from XWikiDocument as doc, BaseObject as obj where obj.name = doc.fullName and obj.className='Diagram.DiagramClass' and doc.fullName &lt;&gt; 'Diagram.DiagramTemplate' $migrationIsRequiredClause")
     #set ($toBeMigratedEntries = $services.query.hql($hql).execute())
   #end
