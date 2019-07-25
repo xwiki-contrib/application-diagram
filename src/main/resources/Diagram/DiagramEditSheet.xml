@@ -377,6 +377,9 @@ define('diagramStore', ['jquery', 'draw.io', 'xwiki-events-bridge'], function($)
 
   var updateFormFields = function(event) {
     forEachOpenedFile(function(file) {
+      // This is a workaround for https://github.com/jgraph/drawio/issues/490
+      // Stop editing for getting the latest content from diagram
+      file.ui.editor.graph.stopEditing(false);
       file.updateFileData();
     });
   };
