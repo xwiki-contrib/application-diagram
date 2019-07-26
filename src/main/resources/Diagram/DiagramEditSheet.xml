@@ -323,7 +323,7 @@ define('spin-global', ['spin'], function(spin) {
       <code>/**
  * Adds support for editing diagrams stored in XWiki pages.
  */
-define('diagramStore', ['jquery', 'draw.io', 'xwiki-events-bridge'], function($) {
+define('diagramStore', ['jquery', 'xwiki-meta', 'draw.io', 'xwiki-events-bridge'], function($, xm) {
   var files = [];
   window._xfiles = files;
   var createFile = function(ui, input, title) {
@@ -393,6 +393,29 @@ define('diagramStore', ['jquery', 'draw.io', 'xwiki-events-bridge'], function($)
   // We need to update the form fields before the form is validated (for Preview, Save and Save &amp; Continue).
   $(document).on('xwiki:actions:beforePreview xwiki:actions:beforeSave', updateFormFields);
 
+  var saveAttachment = function(file) {
+    file.getUi().exportToCanvas(function(canvas) {
+      if(canvas) {
+        canvas.toBlob(function(blob) {
+          let doc = new XWiki.Document(xm.documentReference);
+          let url = doc.getURL('upload');
+          let formData = new FormData();
+          formData.append('filepath', blob);
+          formData.append('filename', xm.documentReference.name + '.png');
+          formData.append('form_token', xm.form_token);
+          $.post({
+            url: url,
+            data: formData,
+            processData: false,
+            contentType: false
+          });
+        });
+      }
+    }, null, null, null, function(e) {
+      new XWiki.widgets.Notification("$services.localization.render('diagram.page.error')", 'error');
+    }, null, true, null, null, null, null, null, null, null);
+  }
+
   $(document).on('xwiki:actions:beforeSave', function() {
     forEachOpenedFile(function(file) {
       var svgInput = file.input.next('.diagram-svg');
@@ -413,6 +436,11 @@ define('diagramStore', ['jquery', 'draw.io', 'xwiki-events-bridge'], function($)
         submitInProgress = event.type === 'xwiki:actions:preview' || event.type === 'xwiki:actions:save';
         resetDirty();
       }
+      // Save the diagram as an image attachment on this page.
+      // Used for export as pdf.
+      forEachOpenedFile(function(file) {
+        saveAttachment(file);
+      });
     });
 
   $(window).on('beforeunload', function(event) {

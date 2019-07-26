@@ -50,8 +50,9 @@
     #set ($discard = $response.setContentLength($svg.length()))
     #set ($discard = $response.writer.write($svg))
   #elseif ($xcontext.action == 'export')
+    #set ($fileName = $doc.getName() + '.png')
     {{html clean="false"}}
-    &lt;img src="$doc.getURL('get', "data=svg&amp;v=$!doc.version")" alt="$escapetool.xml($doc.plainTitle)" /&gt;
+    &lt;img src="$doc.getAttachmentURL($fileName, 'download', "v=$!doc.version")" alt="$escapetool.xml($doc.plainTitle)" /&gt;
     {{/html}}
   #else
     #set ($discard = $xwiki.ssx.use('Diagram.DiagramViewSheet'))
