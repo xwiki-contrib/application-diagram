@@ -50,11 +50,11 @@
     #set ($discard = $response.setContentLength($svg.length()))
     #set ($discard = $response.writer.write($svg))
   #elseif ($xcontext.action == 'export')
-    #if ($doc.getName() == 'WebHome')
-      #set ($fileName = $doc.getDocumentReference().getLastSpaceReference().getName() + '.png')
-    #else
-      #set ($fileName = $doc.getName() + '.png')
+    #set ($fileName = $doc.name)
+    #if ($fileName == 'WebHome')
+      #set ($fileName = $doc.documentReference.lastSpaceReference.name)
     #end
+    #set ($fileName = "${fileName}.png")
     {{html clean="false"}}
     &lt;img src="$doc.getAttachmentURL($fileName, 'download', "v=$!doc.version")" alt="$escapetool.xml($doc.plainTitle)" /&gt;
     {{/html}}
