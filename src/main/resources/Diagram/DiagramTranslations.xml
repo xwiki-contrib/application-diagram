@@ -70,8 +70,8 @@ diagram.macro.invalidReference=The specified page is not a diagram.
 diagram.macro.view=View diagram
 diagram.macro.viewNotAllowed=You are not allowed to view this diagram.
 
-# Diagram page
-diagram.page.error=Error at saving the diagram as an attachment.</content>
+# Diagram editor
+diagram.editor.saveAsImageAttachmentError=Error when saving the diagram as an image attachment.</content>
   <object>
     <name>Diagram.DiagramTranslations</name>
     <number>0</number>
