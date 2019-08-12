@@ -54,9 +54,14 @@
     #if ($fileName == 'WebHome')
       #set ($fileName = $doc.documentReference.lastSpaceReference.name)
     #end
-    #set ($fileName = "${fileName}.png")
+    #set ($fileName = "${fileName}.thumbnail.png")
+    #set ($diagramURL = $doc.getAttachmentURL($fileName, 'download', "v=$!doc.version"))
+    ## Use the svg for export in case the attachment does not exists.
+    #if (!$!doc.getAttachment($fileName))
+      #set ($diagramURL = $doc.getURL('get', "data=svg&amp;v=$!doc.version"))
+    #end
     {{html clean="false"}}
-    &lt;img src="$doc.getAttachmentURL($fileName, 'download', "v=$!doc.version")" alt="$escapetool.xml($doc.plainTitle)" /&gt;
+      &lt;img src="$diagramURL" alt="$escapetool.xml($doc.plainTitle)" /&gt;
     {{/html}}
   #else
     #set ($discard = $xwiki.ssx.use('Diagram.DiagramViewSheet'))
