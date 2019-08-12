@@ -391,11 +391,7 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'draw.io', 'xwiki-events-bridge'
   };
 
   var pipeDeferred = function(left, right) {
-    left.done(function() {
-      right.resolve.apply(right, arguments);
-    }).fail(function() {
-      right.reject.apply(right, arguments);
-    });
+    left.done($.proxy(right, 'resolve')).fail($.proxy(right, 'resolve'));
   };
 
   var uploadFile = function(blob, fileName) {

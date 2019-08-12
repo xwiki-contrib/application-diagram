@@ -57,7 +57,7 @@
     #set ($fileName = "${fileName}.thumbnail.png")
     #set ($diagramURL = $doc.getAttachmentURL($fileName, 'download', "v=$!doc.version"))
     ## Use the svg for export in case the attachment does not exists.
-    #if (!$!doc.getAttachment($fileName))
+    #if (!$doc.getAttachment($fileName))
       #set ($diagramURL = $doc.getURL('get', "data=svg&amp;v=$!doc.version"))
     #end
     {{html clean="false"}}
