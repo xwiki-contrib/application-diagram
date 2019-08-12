@@ -68,7 +68,10 @@ diagram.macro.createNotAllowed=You are not allowed to create this diagram.
 diagram.macro.edit=Edit diagram
 diagram.macro.invalidReference=The specified page is not a diagram.
 diagram.macro.view=View diagram
-diagram.macro.viewNotAllowed=You are not allowed to view this diagram.</content>
+diagram.macro.viewNotAllowed=You are not allowed to view this diagram.
+
+# Diagram editor
+diagram.editor.saveAsImageAttachmentError=Error when saving the diagram as an image attachment.</content>
   <object>
     <name>Diagram.DiagramTranslations</name>
     <number>0</number>
