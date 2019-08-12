@@ -596,11 +596,10 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'draw.io', 'xwiki-events-bridge'
 
   /* These variables are used to decide if an image should be uploaded at original resolution or
    * should be declined for being too big.
-   *
-   * Default values:
-   * EditorUi.prototype.maxImageSize = 520;
-   * EditorUi.prototype.maxImageBytes = 1000000;
    */
+  // Default values:
+  // EditorUi.prototype.maxImageSize = 520;
+  // EditorUi.prototype.maxImageBytes = 1000000;
 
   //
   // Diagram Editor Constructor.
@@ -704,26 +703,15 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'draw.io', 'xwiki-events-bridge'
     var newArgs = Array.prototype.slice.call(arguments);
     newArgs[4] = function(data, mimeType, x, y, w, h) {
       if (data.substring(0, 5) == 'data:') {
-        var saveAttachment  = function(file) {
+        let currentFile = files[0];
+        diagramStore.uploadFile(currentFile, currentFile.name).done(function() {
           let doc = new XWiki.Document();
-          let url = doc.getURL('upload');
-          let formData = new FormData();
-          formData.append('filepath', file);
-          formData.append('form_token', xm.form_token);
-          $.post({
-            url: url,
-            data: formData,
-            processData: false,
-            contentType: false,
-            success : function() {
-              let documentReference = xm.documentReference;
-              let attachmentReference = new XWiki.AttachmentReference(file.name, documentReference);
-              let xwikiURL = doc.getURL('download') + (doc.page == 'WebHome' ? doc.page : '') + '/' + file.name;
-              fn.apply(this, [xwikiURL, mimeType, x, y, w, h]);
-            }
-          });
-        };
-        saveAttachment(files[0]);
+          let documentReference = xm.documentReference;
+          let attachmentReference = new XWiki.AttachmentReference(currentFile.name, documentReference);
+          let xwikiURL = doc.getURL('download') + (doc.page == 'WebHome' ? doc.page : '') + '/' + currentFile.name;
+          fn.apply(this, [xwikiURL, mimeType, x, y, w, h]);
+        });
+        diagramStore.uploadFile(currentFile, currentFile.name);
       } else {
         fn.apply(this, arguments);
       }
