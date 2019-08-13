@@ -593,6 +593,13 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'draw.io', 'xwiki-events-bridge'
     </property>
     <property>
       <code>define('diagramEditor', ['jquery', 'diagramStore'], function($, diagramStore) {
+
+  // These variables are used to decide if an image should be uploaded at original resolution or
+  // should be declined for being too big.
+  // Default values:
+  // EditorUi.prototype.maxImageSize = 520;
+  // EditorUi.prototype.maxImageBytes = 1000000;
+
   //
   // Diagram Editor Constructor.
   //
@@ -687,6 +694,26 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'draw.io', 'xwiki-events-bridge'
     };
     return converter;
   };
+
+  // Override for uploading the image as attachment instead of encode it to Base64
+  var oldImportFiles = EditorUi.prototype.importFiles;
+  EditorUi.prototype.importFiles = function(files, x, y, maxSize, fn, resultFn, filterFn, barrierFn, resizeDialog,
+                                             maxBytes, resampleThreshold, ignoreEmbeddedXml) {
+    var newArgs = Array.prototype.slice.call(arguments);
+    newArgs[4] = function(data, mimeType, x, y, w, h) {
+      if (data.substring(0, 5) == 'data:') {
+        let currentFile = files[0];
+        diagramStore.uploadFile(currentFile, currentFile.name).done(function() {
+          let doc = XWiki.currentDocument;
+          let xwikiURL = doc.getURL('download') + (doc.page == 'WebHome' ? doc.page : '') + '/' + currentFile.name;
+          fn.apply(this, [xwikiURL, mimeType, x, y, w, h]);
+        });
+      } else {
+        fn.apply(this, arguments);
+      }
+    }
+    oldImportFiles.apply(this, newArgs);
+  }
 
   //
   // Fix the side bar tool tip: the tool tip position is computed as if the editor takes the full screen.
