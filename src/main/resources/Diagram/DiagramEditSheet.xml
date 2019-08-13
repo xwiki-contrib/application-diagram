@@ -592,7 +592,7 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'draw.io', 'xwiki-events-bridge'
       <cache>long</cache>
     </property>
     <property>
-      <code>define('diagramEditor', ['jquery', 'diagramStore', 'xwiki-meta'], function($, diagramStore, xm) {
+      <code>define('diagramEditor', ['jquery', 'diagramStore'], function($, diagramStore, xm) {
 
   /* These variables are used to decide if an image should be uploaded at original resolution or
    * should be declined for being too big.
