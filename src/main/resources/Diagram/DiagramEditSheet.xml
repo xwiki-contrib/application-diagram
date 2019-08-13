@@ -594,9 +594,8 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'draw.io', 'xwiki-events-bridge'
     <property>
       <code>define('diagramEditor', ['jquery', 'diagramStore'], function($, diagramStore, xm) {
 
-  /* These variables are used to decide if an image should be uploaded at original resolution or
-   * should be declined for being too big.
-   */
+  // These variables are used to decide if an image should be uploaded at original resolution or
+  // should be declined for being too big.
   // Default values:
   // EditorUi.prototype.maxImageSize = 520;
   // EditorUi.prototype.maxImageBytes = 1000000;
@@ -705,11 +704,10 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'draw.io', 'xwiki-events-bridge'
       if (data.substring(0, 5) == 'data:') {
         let currentFile = files[0];
         diagramStore.uploadFile(currentFile, currentFile.name).done(function() {
-          let doc = new XWiki.Document();
+          let doc = XWiki.currentDocument;
           let xwikiURL = doc.getURL('download') + (doc.page == 'WebHome' ? doc.page : '') + '/' + currentFile.name;
           fn.apply(this, [xwikiURL, mimeType, x, y, w, h]);
         });
-        diagramStore.uploadFile(currentFile, currentFile.name);
       } else {
         fn.apply(this, arguments);
       }
