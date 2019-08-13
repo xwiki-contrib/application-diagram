@@ -706,7 +706,6 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'draw.io', 'xwiki-events-bridge'
         let currentFile = files[0];
         diagramStore.uploadFile(currentFile, currentFile.name).done(function() {
           let doc = new XWiki.Document();
-          let documentReference = xm.documentReference;
           let xwikiURL = doc.getURL('download') + (doc.page == 'WebHome' ? doc.page : '') + '/' + currentFile.name;
           fn.apply(this, [xwikiURL, mimeType, x, y, w, h]);
         });
