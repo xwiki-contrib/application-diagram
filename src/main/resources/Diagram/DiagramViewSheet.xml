@@ -40,7 +40,7 @@
   <syntaxId>xwiki/2.1</syntaxId>
   <hidden>true</hidden>
   <content>{{velocity}}
-#if ($doc.getObject('Diagram.DiagramClass'))
+#if ($doc.getObject('Diagram.DiagramClass') || $request.export == 'url')
   #if ($xcontext.action == 'get' &amp;&amp; $request.data == 'svg')
     #set ($svg = $doc.getValue('svg'))
     #if ("$!svg" == '')
@@ -67,7 +67,10 @@
     #set ($discard = $xwiki.ssx.use('Diagram.DiagramViewSheet'))
     #set ($discard = $xwiki.jsx.use('Diagram.DiagramViewSheet'))
     {{html clean="false"}}
-    &lt;div class="diagram loading" data-model="$escapetool.xml($tdoc.content)"&gt;&lt;/div&gt;
+
+    ## Check if the query contains the parameter for getting the diagram from URL
+    #set ($urlViewer = ($request.export == 'url'))
+    &lt;div class="diagram loading" #if (!$urlViewer) data-model="$escapetool.xml($tdoc.content)" #end&gt;&lt;/div&gt;
     {{/html}}
   #end
 #end
@@ -175,16 +178,22 @@ require.config({
     'mxgraph-client': mxBasePath + 'mxClient.min',
     'sanitizer': mxGraphViewerBasePath + 'sanitizer/sanitizer.min',
     'mxgraph-viewer': mxGraphViewerBasePath + 'mxGraphViewer.min',
-    'draw.io.viewer': diagramViewerBasePath + 'js/draw.io.viewer.min'
+    'draw.io.viewer': diagramViewerBasePath + 'js/draw.io.viewer.min',
+    'pako': diagramViewerBasePath + 'js/deflate/pako.min'
   },
   shim: {
     'mxgraph-viewer': {
       deps: ['mxgraph-client', 'sanitizer']
     },
     'draw.io.viewer': {
-      deps: ['mxgraph-viewer']
+      deps: ['mxgraph-viewer', 'pako-global']
     }
   }
+});
+
+define('pako-global', ['pako'], function(pako) {
+  // draw.io expects a global variable.
+  window.pako = pako;
 });</code>
     </property>
     <property>
@@ -301,7 +310,10 @@ require.config({
       lightbox: false
     }, options);
     return this.each(function() {
-      var xmlDoc = mxUtils.parseXml($(this).data('model'));
+      var xmlDoc = getDiagramFromURL();
+      if (null === xmlDoc) {
+        var xmlDoc = mxUtils.parseXml($(this).data('model'));
+      }
       var graphViewer = new GraphViewer(this, xmlDoc.documentElement, options);
       graphViewer.fitGraph();
     }).removeClass('loading');
@@ -318,6 +330,18 @@ require.config({
     // Failed to load the theme.
     diagramViewerDeferred.reject();
   });
+
+  function getDiagramFromURL() {
+    if (window.location.hash !== '') {
+      // We need to exlude first 2 letters from hash (#R)
+      let decodedData = decodeURIComponent(window.location.hash.substring(2));
+      var graph = new Graph();
+      let decompressed = graph.decompress(decodedData);
+      var xmlDoc = mxUtils.parseXml(decompressed);
+      return xmlDoc;
+    }
+    return null;
+  };
 
   return diagramViewerDeferred.promise();
 });</code>
