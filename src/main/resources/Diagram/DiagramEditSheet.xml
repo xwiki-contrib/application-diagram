@@ -321,9 +321,29 @@ define('spin-global', ['spin'], function(spin) {
     </property>
     <property>
       <code>/**
+ * Generic helper methods.
+ */
+define('xwiki-utils', ['jquery', 'xwiki-meta'], function($, xm) {
+  var getAttachmentURL = function(attachment, action, queryString) {
+    var docRef = xm.documentReference;
+    if (typeof attachment != 'string') {
+      docRef = attachment.parent;
+      attachment = attachment.name;
+    }
+    var attachmentURL = new XWiki.Document(docRef).getURL(action) + (docRef.name == 'WebHome' ? docRef.name : '') + '/'
+      + attachment + (queryString ? queryString : '');
+    return attachmentURL;
+  };
+
+  return {
+    getAttachmentURL: getAttachmentURL
+  };
+});
+
+/**
  * Adds support for editing diagrams stored in XWiki pages.
  */
-define('diagramStore', ['jquery', 'xwiki-meta', 'draw.io', 'xwiki-events-bridge'], function($, xm) {
+define('diagramStore', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki-events-bridge'], function($, xm, xutils) {
   var files = [];
   window._xfiles = files;
   var createFile = function(ui, input, title) {
@@ -411,12 +431,24 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'draw.io', 'xwiki-events-bridge'
     });
   };
 
+  var deleteFile = function(fileName) {
+    var deferred = $.Deferred();
+    var doc = new XWiki.Document(xm.documentReference);
+    var queryString = '?form_token=' + xm.form_token + '&amp;xredirect=' +
+        encodeURIComponent(doc.getURL('get', 'outputSyntax=plain'));
+    var attachmentURL = xutils.getAttachmentURL(fileName, 'delattachment', queryString);
+    return $.post(attachmentURL);
+  };
+
+  // Keep only the last version of the attachment.
   var saveCanvasAsAttachment = function(canvas) {
     var deferred = $.Deferred();
     canvas.toBlob(function(blob) {
       var docRef = xm.documentReference;
       var fileName = (docRef.name == 'WebHome' ? docRef.parent.name : docRef.name) + '.thumbnail.png';
-      pipeDeferred(uploadFile(blob, fileName), deferred);
+      deleteFile(fileName).always(function() {
+        pipeDeferred(uploadFile(blob, fileName), deferred);
+      });
     });
     return deferred.promise();
   };
@@ -592,7 +624,7 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'draw.io', 'xwiki-events-bridge'
       <cache>long</cache>
     </property>
     <property>
-      <code>define('diagramEditor', ['jquery', 'diagramStore'], function($, diagramStore) {
+      <code>define('diagramEditor', ['jquery', 'diagramStore', 'xwiki-utils'], function($, diagramStore, xutils) {
 
   // These variables are used to decide if an image should be uploaded at original resolution or
   // should be declined for being too big.
@@ -695,7 +727,7 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'draw.io', 'xwiki-events-bridge'
     return converter;
   };
 
-  // Override for uploading the image as attachment instead of encode it to Base64
+  // Override for uploading the image as attachment instead of encode it to Base64.
   var oldImportFiles = EditorUi.prototype.importFiles;
   EditorUi.prototype.importFiles = function(files, x, y, maxSize, fn, resultFn, filterFn, barrierFn, resizeDialog,
                                              maxBytes, resampleThreshold, ignoreEmbeddedXml) {
@@ -705,7 +737,7 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'draw.io', 'xwiki-events-bridge'
         let currentFile = files[0];
         diagramStore.uploadFile(currentFile, currentFile.name).done(function() {
           let doc = XWiki.currentDocument;
-          let xwikiURL = doc.getURL('download') + (doc.page == 'WebHome' ? doc.page : '') + '/' + currentFile.name;
+          let xwikiURL = xutils.getAttachmentURL(currentFile.name, 'download');
           fn.apply(this, [xwikiURL, mimeType, x, y, w, h]);
         });
       } else {
