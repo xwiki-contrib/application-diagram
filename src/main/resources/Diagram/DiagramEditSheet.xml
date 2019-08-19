@@ -343,7 +343,8 @@ define('xwiki-utils', ['jquery', 'xwiki-meta'], function($, xm) {
 /**
  * Adds support for editing diagrams stored in XWiki pages.
  */
-define('diagramStore', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki-events-bridge'], function($, xm, xutils) {
+define('diagramStore', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki-events-bridge'],
+    function($, xm, xutils) {
   var files = [];
   window._xfiles = files;
   var createFile = function(ui, input, title) {
