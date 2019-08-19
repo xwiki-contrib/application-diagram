@@ -40,7 +40,7 @@
   <syntaxId>xwiki/2.1</syntaxId>
   <hidden>true</hidden>
   <content>{{velocity}}
-#if ($doc.getObject('Diagram.DiagramClass'))
+#if ($doc.getObject('Diagram.DiagramClass') || "$!request.source" != '')
   #if ($xcontext.action == 'get' &amp;&amp; $request.data == 'svg')
     #set ($svg = $doc.getValue('svg'))
     #if ("$!svg" == '')
@@ -67,7 +67,8 @@
     #set ($discard = $xwiki.ssx.use('Diagram.DiagramViewSheet'))
     #set ($discard = $xwiki.jsx.use('Diagram.DiagramViewSheet'))
     {{html clean="false"}}
-    &lt;div class="diagram loading" data-model="$escapetool.xml($tdoc.content)"&gt;&lt;/div&gt;
+    ## Check if the query contains the parameter for getting the diagram from URL.
+    &lt;div class="diagram loading" #if ("$!request.source" == '') data-model="$escapetool.xml($tdoc.content)" #end&gt;&lt;/div&gt;
     {{/html}}
   #end
 #end
@@ -175,16 +176,22 @@ require.config({
     'mxgraph-client': mxBasePath + 'mxClient.min',
     'sanitizer': mxGraphViewerBasePath + 'sanitizer/sanitizer.min',
     'mxgraph-viewer': mxGraphViewerBasePath + 'mxGraphViewer.min',
-    'draw.io.viewer': diagramViewerBasePath + 'js/draw.io.viewer.min'
+    'draw.io.viewer': diagramViewerBasePath + 'js/draw.io.viewer.min',
+    'pako': diagramViewerBasePath + 'js/deflate/pako.min'
   },
   shim: {
     'mxgraph-viewer': {
       deps: ['mxgraph-client', 'sanitizer']
     },
     'draw.io.viewer': {
-      deps: ['mxgraph-viewer']
+      deps: ['mxgraph-viewer', 'pako-global']
     }
   }
+});
+
+define('pako-global', ['pako'], function(pako) {
+  // draw.io expects a global variable.
+  window.pako = pako;
 });</code>
     </property>
     <property>
@@ -301,8 +308,7 @@ require.config({
       lightbox: false
     }, options);
     return this.each(function() {
-      var xmlDoc = mxUtils.parseXml($(this).data('model'));
-      var graphViewer = new GraphViewer(this, xmlDoc.documentElement, options);
+      var graphViewer = new GraphViewer(this, mxUtils.parseXml(getDiagramXML($(this))).documentElement, options);
       graphViewer.fitGraph();
     }).removeClass('loading');
   };
@@ -318,6 +324,22 @@ require.config({
     // Failed to load the theme.
     diagramViewerDeferred.reject();
   });
+
+  // Return a diagram in XML format if is present in the URL.
+  function getDiagramXMLFromURL() {
+    if (window.location.hash.substring(0, 2) === '#R') {
+        // We need to exclude first 2 letters from hash (#R).
+        let decodedData = decodeURIComponent(window.location.hash.substring(2));
+        let graph = new Graph();
+        let rawDiagram = graph.decompress(decodedData);
+        return rawDiagram;
+    }
+    return null;
+  };
+
+  function getDiagramXML(container) {
+    return getDiagramXMLFromURL() || container.data('model');
+  }
 
   return diagramViewerDeferred.promise();
 });</code>
