@@ -326,12 +326,16 @@ define('spin-global', ['spin'], function(spin) {
 define('xwiki-utils', ['jquery', 'xwiki-meta'], function($, xm) {
   var getAttachmentURL = function(attachment, action, queryString) {
     var docRef = xm.documentReference;
-    if (typeof attachment != 'string') {
+    if (typeof attachment !== 'string') {
       docRef = attachment.parent;
       attachment = attachment.name;
     }
-    var attachmentURL = new XWiki.Document(docRef).getURL(action) + (docRef.name == 'WebHome' ? docRef.name : '') +
-      '/' + attachment + (queryString ? queryString : '');
+    if (typeof queryString === 'object') {
+      queryString = $.param(queryString);
+    }
+    var attachmentURL = new XWiki.Document(docRef).getURL(action || 'download') +
+      (docRef.name == 'WebHome' ? docRef.name : '') + '/' + attachment +
+      (queryString ? '?' + queryString : '');
     return attachmentURL;
   };
 
@@ -433,11 +437,10 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki
   };
 
   var deleteFile = function(fileName) {
-    var deferred = $.Deferred();
-    var doc = new XWiki.Document(xm.documentReference);
-    var queryString = '?form_token=' + xm.form_token + '&amp;xredirect=' +
-        encodeURIComponent(doc.getURL('get', 'outputSyntax=plain'));
-    var attachmentURL = xutils.getAttachmentURL(fileName, 'delattachment', queryString);
+    var attachmentURL = xutils.getAttachmentURL(fileName, 'delattachment', {
+      'form_token': xm.form_token,
+      'xredirect': XWiki.currentDocument.getURL('get', 'outputSyntax=plain')
+    });
     return $.post(attachmentURL);
   };
 
@@ -738,7 +741,7 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki
         let currentFile = files[0];
         diagramStore.uploadFile(currentFile, currentFile.name).done(function() {
           let doc = XWiki.currentDocument;
-          let xwikiURL = xutils.getAttachmentURL(currentFile.name, 'download');
+          let xwikiURL = xutils.getAttachmentURL(currentFile.name);
           fn.apply(this, [xwikiURL, mimeType, x, y, w, h]);
         });
       } else {
