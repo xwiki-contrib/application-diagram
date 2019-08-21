@@ -71,7 +71,10 @@ diagram.macro.view=View diagram
 diagram.macro.viewNotAllowed=You are not allowed to view this diagram.
 
 # Diagram editor
-diagram.editor.saveAsImageAttachmentError=Error when saving the diagram as an image attachment.</content>
+diagram.editor.saveAsImageAttachmentError=Error when saving the diagram as an image attachment.
+
+# Diagram migrator
+diagram.migration.warning={0} {0,choice,1#diagram requires|1&lt;diagrams require} a migration. Please click {1}here{2} to proceed.</content>
   <object>
     <name>Diagram.DiagramTranslations</name>
     <number>0</number>

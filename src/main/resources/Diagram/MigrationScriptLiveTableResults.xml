@@ -39,10 +39,11 @@
   <minorEdit>false</minorEdit>
   <syntaxId>xwiki/2.1</syntaxId>
   <hidden>true</hidden>
-  <content>{{include reference="XWiki.LiveTableResultsMacros" /}}
-{{include reference="Diagram.MigrationScriptMacros" /}}
+  <content>{{include reference="XWiki.LiveTableResultsMacros"/}}
+{{include reference="Diagram.MigrationScriptMacros"/}}
 
 {{velocity}}
+#selectDiagramsRequiringMigration()
 #gridresultwithfilter("$!request.classname" $request.collist.split(',') '' "${migrationIsRequiredClause}" $params)
 {{/velocity}}</content>
 </xwikidoc>
