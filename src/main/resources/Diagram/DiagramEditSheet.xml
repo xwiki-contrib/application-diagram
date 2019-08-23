@@ -735,17 +735,20 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki
   var oldImportFiles = EditorUi.prototype.importFiles;
   EditorUi.prototype.importFiles = function(files, x, y, maxSize, fn, resultFn, filterFn, barrierFn, resizeDialog,
                                              maxBytes, resampleThreshold, ignoreEmbeddedXml) {
-    var newArgs = Array.prototype.slice.call(arguments);
-    newArgs[4] = function(data, mimeType, x, y, w, h) {
-      if (data.substring(0, 5) == 'data:') {
-        let currentFile = files[0];
-        diagramStore.uploadFile(currentFile, currentFile.name).done(function() {
-          let doc = XWiki.currentDocument;
-          let xwikiURL = xutils.getAttachmentURL(currentFile.name);
-          fn.apply(this, [xwikiURL, mimeType, x, y, w, h]);
-        });
-      } else {
-        fn.apply(this, arguments);
+    var newArgs = arguments;
+    if (fn) {
+      var newArgs = Array.prototype.slice.call(arguments);
+      newArgs[4] = function(data, mimeType, x, y, w, h) {
+        if (data.substring(0, 5) == 'data:') {
+          let currentFile = files[0];
+          diagramStore.uploadFile(currentFile, currentFile.name).done(function() {
+            let doc = XWiki.currentDocument;
+            let xwikiURL = xutils.getAttachmentURL(currentFile.name);
+            fn.apply(this, [xwikiURL, mimeType, x, y, w, h]);
+          });
+        } else {
+          fn.apply(this, arguments);
+        }
       }
     }
     oldImportFiles.apply(this, newArgs);
