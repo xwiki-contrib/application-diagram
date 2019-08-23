@@ -690,7 +690,9 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki
       // Extras menu
       'autosave', 'showStartScreen', 'plugins', 'offline', 'chromeApp',
        // Help menu (Graph Editor)
-      'help'
+      'help',
+      // ExportAs
+      'exportHtml'
     ].forEach(function(actionName) {
       var action = editorUI.actions.actions[actionName];
       if (action) {
