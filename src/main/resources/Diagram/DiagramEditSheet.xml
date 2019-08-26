@@ -773,7 +773,7 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki
       }
       // Append source parameter to the query
       queryString += '&amp;source=url';
-      return window.location.protocol + window.location.host +
+      return window.location.protocol + '//' + window.location.host +
         new XWiki.Document('DiagramViewSheet', 'Diagram').getURL('view', queryString, documentFragment);
     }
     return rawURL;
