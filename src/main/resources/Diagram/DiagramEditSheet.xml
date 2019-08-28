@@ -670,6 +670,17 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki
   };
 
   //
+  // Add support for not displaying 'browser' option from 'Import from' sub-menu
+  //
+  var originalAddItem = mxPopupMenu.prototype.addItem;
+  mxPopupMenu.prototype.addItem = function(title, image, funct, parent, iconCls, enabled, active) {
+    if (title === (mxResources.get('browser') + '...') &amp;&amp; parent &amp;&amp; parent.innerText === 'Import from') {
+      return null;
+    }
+    return originalAddItem.apply(this, arguments);
+  };
+
+  //
   // Hide the editor footer.
   //
   var hideFooter = function(editorUI) {
