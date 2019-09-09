@@ -48,4 +48,141 @@
   #end
 #end
 {{/velocity}}</content>
+  <object>
+    <name>Diagram.DiagramSheet</name>
+    <number>1</number>
+    <className>XWiki.JavaScriptExtension</className>
+    <guid>ad4bd9bd-2932-40c3-a7b9-5caae1266b43</guid>
+    <class>
+      <name>XWiki.JavaScriptExtension</name>
+      <customClass/>
+      <customMapping/>
+      <defaultViewSheet/>
+      <defaultEditSheet/>
+      <defaultWeb/>
+      <nameField/>
+      <validationScript/>
+      <cache>
+        <cache>0</cache>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <multiSelect>0</multiSelect>
+        <name>cache</name>
+        <number>5</number>
+        <prettyName>Caching policy</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <unmodifiable>0</unmodifiable>
+        <values>long|short|default|forbid</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </cache>
+      <code>
+        <contenttype>PureText</contenttype>
+        <disabled>0</disabled>
+        <editor>PureText</editor>
+        <name>code</name>
+        <number>2</number>
+        <prettyName>Code</prettyName>
+        <rows>20</rows>
+        <size>50</size>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.TextAreaClass</classType>
+      </code>
+      <name>
+        <disabled>0</disabled>
+        <name>name</name>
+        <number>1</number>
+        <prettyName>Name</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </name>
+      <parse>
+        <disabled>0</disabled>
+        <displayFormType>select</displayFormType>
+        <displayType>yesno</displayType>
+        <name>parse</name>
+        <number>4</number>
+        <prettyName>Parse content</prettyName>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
+      </parse>
+      <use>
+        <cache>0</cache>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <multiSelect>0</multiSelect>
+        <name>use</name>
+        <number>3</number>
+        <prettyName>Use this extension</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <unmodifiable>0</unmodifiable>
+        <values>currentPage|onDemand|always</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </use>
+    </class>
+    <property>
+      <cache>long</cache>
+    </property>
+    <property>
+      <code>//
+// Used in view &amp; edit sheets
+//
+define ('diagram-utils', ['mxgraph-common'], function() {
+  //
+  // Get a XML diagram from hash.
+  // The hash begins with 'R' &amp; continues with the encoded diagram.
+  //
+  var getDiagramXMLFromURL = function(url) {
+    let hashIndex = url.indexOf('#');
+    if (hashIndex &gt; -1) {
+      // Exclude first 2 letters from hash (#R).
+      let hash = url.substring(hashIndex+2);
+      let decodedData = decodeURIComponent(hash);
+      let graph = new Graph();
+      let rawDiagram = graph.decompress(decodedData);
+      return rawDiagram;
+    }
+    return null;
+  };
+
+  var urlParam = function(parameter, url) {
+    var results = new RegExp('[\?&amp;]' + parameter + '=([^&amp;#]*)').exec(url);
+    if (results === null) {
+       return null;
+    }
+    return decodeURIComponent(results[1]);
+  }
+
+  var getParameterValueFromURL = function(parameter, url) {
+    if (typeof URLSearchParams === 'function') {
+      let rawUrl = new URL (url, window.location.href);
+      let searchParams = new URLSearchParams(rawUrl.search);
+      return searchParams.get(parameter);
+    }
+    // IE will get here since it's not supporting URLSearchParams.
+    return urlParam(parameter, url);
+  }
+
+  return {
+    getDiagramXMLFromURL: getDiagramXMLFromURL,
+    getParameterValueFromURL: getParameterValueFromURL
+  };
+});</code>
+    </property>
+    <property>
+      <name>Diagram utils</name>
+    </property>
+    <property>
+      <parse>0</parse>
+    </property>
+    <property>
+      <use>onDemand</use>
+    </property>
+  </object>
 </xwikidoc>

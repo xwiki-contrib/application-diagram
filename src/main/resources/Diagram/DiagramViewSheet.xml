@@ -177,7 +177,8 @@ require.config({
     'sanitizer': mxGraphViewerBasePath + 'sanitizer/sanitizer.min',
     'mxgraph-viewer': mxGraphViewerBasePath + 'mxGraphViewer.min',
     'draw.io.viewer': diagramViewerBasePath + 'js/draw.io.viewer.min',
-    'pako': diagramViewerBasePath + 'js/deflate/pako.min'
+    'pako': diagramViewerBasePath + 'js/deflate/pako.min',
+    'diagram-utils': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'param=1')
   },
   shim: {
     'mxgraph-viewer': {
@@ -185,6 +186,11 @@ require.config({
     },
     'draw.io.viewer': {
       deps: ['mxgraph-viewer', 'pako-global']
+    }
+  },
+  map: {
+    'diagram-utils': {
+      'mxgraph-common': 'mxgraph-viewer'
     }
   }
 });
@@ -286,7 +292,7 @@ define('pako-global', ['pako'], function(pako) {
       <cache>long</cache>
     </property>
     <property>
-      <code>define('diagramViewer', ['jquery', 'draw.io.viewer'], function($) {
+      <code>define('diagramViewer', ['jquery', 'diagram-utils', 'draw.io.viewer'], function($, diagramUtils) {
   var getOrigin = function() {
     var origin = window.location.origin;
     if (!origin) {
@@ -308,7 +314,8 @@ define('pako-global', ['pako'], function(pako) {
       lightbox: false
     }, options);
     return this.each(function() {
-      var graphViewer = new GraphViewer(this, mxUtils.parseXml(getDiagramXML($(this))).documentElement, options);
+      var graphViewer = new GraphViewer(this, mxUtils.parseXml(getDiagramXML(
+        window.location.href, $(this))).documentElement, options);
       graphViewer.fitGraph();
     }).removeClass('loading');
   };
@@ -325,20 +332,8 @@ define('pako-global', ['pako'], function(pako) {
     diagramViewerDeferred.reject();
   });
 
-  // Return a diagram in XML format if is present in the URL.
-  function getDiagramXMLFromURL() {
-    if (window.location.hash.substring(0, 2) === '#R') {
-        // We need to exclude first 2 letters from hash (#R).
-        let decodedData = decodeURIComponent(window.location.hash.substring(2));
-        let graph = new Graph();
-        let rawDiagram = graph.decompress(decodedData);
-        return rawDiagram;
-    }
-    return null;
-  };
-
-  function getDiagramXML(container) {
-    return getDiagramXMLFromURL() || container.data('model');
+  function getDiagramXML(url, container) {
+    return diagramUtils.getDiagramXMLFromURL(url) || container.data('model');
   }
 
   return diagramViewerDeferred.promise();
