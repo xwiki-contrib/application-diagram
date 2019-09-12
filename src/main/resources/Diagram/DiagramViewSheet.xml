@@ -186,15 +186,9 @@ require.config({
     'diagram-utils': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'param=1')
   },
   shim: {
-    'mxgraph-client': {
-      deps: ['mxgraph-init']
-    },
-    'mxgraph-viewer': {
-      deps: ['mxgraph-client', 'sanitizer']
-    },
-    'draw.io.viewer': {
-      deps: ['mxgraph-viewer', 'pako-global', 'spin-global']
-    }
+    'mxgraph-client': ['mxgraph-init'],
+    'mxgraph-viewer': ['mxgraph-client', 'sanitizer'],
+    'draw.io.viewer': ['mxgraph-viewer', 'pako-global', 'spin-global'],
   },
   map: {
     'diagram-utils': {
@@ -324,6 +318,16 @@ define('spin-global', ['spin'], function(spin) {
 
   // We don't support loading multiple pages (tabbed UI).
   EditorUi.prototype.initPages = function() {};
+
+  // Fix the diagram printing from the lightbox. mxPrintPreview#addGraphFragment optimizes the diagram rendering when
+  // previewing the print by rendering only the shapes that intersect the clip associated with the print page. The
+  // computations are wrong in view mode (either when computing the bounding rect of the shapes or the clip of the print
+  // page) and it's not easy to spot the problem unfortunately. The consequence is that the print is empty. Disabling
+  // the clipping fixes the issue apparently, but we loose the optimization which may cause problems for large diagrams.
+  // Note that starting with version 3.9.9 of mxGraph the mxPrintPreview#addGraphFragment function doesn't skip the
+  // shapes that don't interset the clip anymore because the return line has been commented out.
+  // See https://github.com/jgraph/mxgraph/commit/d5c1345ec946b9d55a9c2a8c1c5df0f154561edf
+  mxPrintPreview.prototype.clipping = false;
 
   $.fn.viewDiagram = function(options) {
     options = $.extend({
