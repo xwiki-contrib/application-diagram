@@ -137,7 +137,11 @@
       <cache>long</cache>
     </property>
     <property>
-      <code>// mxGraph Client Configuration
+      <code>/*!
+#set ($minify = $services.debug.minify != false)
+#set ($suffix = "#if ($minify).min#end")
+*/
+// mxGraph Client Configuration
 var mxBasePath = "$services.webjars.url('org.xwiki.contrib:mxgraph-client', '')";
 var mxLanguage = '$xcontext.locale';
 
@@ -194,28 +198,22 @@ var DriveFile = DropboxFile = GitHubFile = OneDriveFile = TrelloFile = false;
 
 require.config({
   paths: {
-    'mxgraph-init': diagramEditorBasePath + 'js/draw.io.init.min',
-    'mxgraph-client': mxBasePath + 'mxClient.min',
+    'mxgraph-init': diagramEditorBasePath + 'js/draw.io.init$suffix',
+    'mxgraph-client': mxBasePath + 'mxClient$suffix',
     'jscolor': mxGraphEditorBasePath + 'jscolor/jscolor.min',
     'sanitizer': mxGraphEditorBasePath + 'sanitizer/sanitizer.min',
-    'mxgraph-editor': mxGraphEditorBasePath + 'mxGraphEditor.min',
+    'mxgraph-editor': mxGraphEditorBasePath + 'mxGraphEditor$suffix',
     'base64': diagramEditorBasePath + 'js/deflate/base64.min',
     'pako': diagramEditorBasePath + 'js/deflate/pako.min',
     'spin': diagramEditorBasePath + 'js/spin/spin.min',
     'jszip': diagramEditorBasePath + 'js/jszip/jszip.min',
-    'draw.io': diagramEditorBasePath + 'js/draw.io.min',
-    'diagram-utils': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'param=1')
+    'draw.io': diagramEditorBasePath + 'js/draw.io$suffix',
+    'diagram-utils': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify')
   },
   shim: {
-    'mxgraph-client': {
-      deps: ['mxgraph-init']
-    },
-    'mxgraph-editor': {
-      deps: ['mxgraph-client', 'jscolor', 'sanitizer']
-    },
-    'draw.io': {
-      deps: ['mxgraph-editor', 'base64', 'pako-global', 'spin-global', 'jszip']
-    }
+    'mxgraph-client': ['mxgraph-init'],
+    'mxgraph-editor': ['mxgraph-client', 'jscolor', 'sanitizer'],
+    'draw.io': ['mxgraph-editor', 'base64', 'pako-global', 'spin-global', 'jszip']
   },
   map: {
     'diagram-utils': {
