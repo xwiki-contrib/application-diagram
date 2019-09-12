@@ -139,7 +139,7 @@ define ('diagram-utils', ['mxgraph-common'], function() {
   // The hash begins with 'R' &amp; continues with the encoded diagram.
   //
   var getDiagramXMLFromURL = function(url) {
-    let hashIndex = url.indexOf('#');
+    let hashIndex = url.indexOf('#R');
     if (hashIndex &gt; -1) {
       // Exclude first 2 letters from hash (#R).
       let hash = url.substring(hashIndex+2);
