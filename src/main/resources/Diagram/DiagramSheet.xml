@@ -133,7 +133,7 @@
       <code>//
 // Used in view &amp; edit sheets
 //
-define ('diagram-utils', ['mxgraph-common'], function() {
+define ('diagram-utils', ['jquery', 'mxgraph-common'], function($) {
   //
   // Get a XML diagram from hash.
   // The hash begins with 'R' &amp; continues with the encoded diagram.
@@ -157,21 +157,40 @@ define ('diagram-utils', ['mxgraph-common'], function() {
        return null;
     }
     return decodeURIComponent(results[1]);
-  }
+  };
 
   var getParameterValueFromURL = function(parameter, url) {
     if (typeof URLSearchParams === 'function') {
-      let rawUrl = new URL (url, window.location.href);
-      let searchParams = new URLSearchParams(rawUrl.search);
-      return searchParams.get(parameter);
+      return new URL(url, window.location.href).searchParams.get(parameter);
     }
     // IE will get here since it's not supporting URLSearchParams.
     return urlParam(parameter, url);
-  }
+  };
+
+  //
+  // Load the translation file and the default theme.
+  //
+  var loadTranslationAndTheme = function() {
+    var deferred = $.Deferred();
+    mxResources.loadDefaultBundle = false;
+    var bundle = mxResources.getDefaultBundle(RESOURCE_BASE, mxLanguage) ||
+      mxResources.getSpecialBundle(RESOURCE_BASE, mxLanguage);
+    // The theme is important because it controls how the shapes are rendered.
+    mxUtils.getAll([bundle, STYLE_PATH + '/default.xml'], function(response) {
+      // Adds bundle text to resources.
+      mxResources.parse(response[0].getText());
+      deferred.resolve(response[1].getDocumentElement());
+    }, function() {
+      // Failed to load the translation file or the theme.
+      deferred.reject();
+    });
+    return deferred.promise();
+  };
 
   return {
     getDiagramXMLFromURL: getDiagramXMLFromURL,
-    getParameterValueFromURL: getParameterValueFromURL
+    getParameterValueFromURL: getParameterValueFromURL,
+    loadTranslationAndTheme: loadTranslationAndTheme
   };
 });</code>
     </property>
@@ -180,6 +199,235 @@ define ('diagram-utils', ['mxgraph-common'], function() {
     </property>
     <property>
       <parse>0</parse>
+    </property>
+    <property>
+      <use>onDemand</use>
+    </property>
+  </object>
+  <object>
+    <name>Diagram.DiagramSheet</name>
+    <number>0</number>
+    <className>XWiki.StyleSheetExtension</className>
+    <guid>b73d218d-1ebd-484b-91e1-d9a9cac2ea56</guid>
+    <class>
+      <name>XWiki.StyleSheetExtension</name>
+      <customClass/>
+      <customMapping/>
+      <defaultViewSheet/>
+      <defaultEditSheet/>
+      <defaultWeb/>
+      <nameField/>
+      <validationScript/>
+      <cache>
+        <cache>0</cache>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <multiSelect>0</multiSelect>
+        <name>cache</name>
+        <number>5</number>
+        <prettyName>Caching policy</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <unmodifiable>0</unmodifiable>
+        <values>long|short|default|forbid</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </cache>
+      <code>
+        <contenttype>PureText</contenttype>
+        <disabled>0</disabled>
+        <editor>PureText</editor>
+        <name>code</name>
+        <number>2</number>
+        <prettyName>Code</prettyName>
+        <rows>20</rows>
+        <size>50</size>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.TextAreaClass</classType>
+      </code>
+      <contentType>
+        <cache>0</cache>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <multiSelect>0</multiSelect>
+        <name>contentType</name>
+        <number>6</number>
+        <prettyName>Content Type</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <unmodifiable>0</unmodifiable>
+        <values>CSS|LESS</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </contentType>
+      <name>
+        <disabled>0</disabled>
+        <name>name</name>
+        <number>1</number>
+        <prettyName>Name</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </name>
+      <parse>
+        <disabled>0</disabled>
+        <displayFormType>select</displayFormType>
+        <displayType>yesno</displayType>
+        <name>parse</name>
+        <number>4</number>
+        <prettyName>Parse content</prettyName>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
+      </parse>
+      <use>
+        <cache>0</cache>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <multiSelect>0</multiSelect>
+        <name>use</name>
+        <number>3</number>
+        <prettyName>Use this extension</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <unmodifiable>0</unmodifiable>
+        <values>currentPage|onDemand|always</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </use>
+    </class>
+    <property>
+      <cache>long</cache>
+    </property>
+    <property>
+      <code>/* The diagram styles should be loaded after the skin and before our overwrites. */
+@import url("$services.webjars.url('org.xwiki.contrib:mxgraph-editor', 'styles/grapheditor.css')");
+
+/**
+ * Diagram Editor and Dialogs
+ */
+.diagram-editor {
+  height: 600px;
+  min-height: 20px;
+  position: relative;
+}
+
+.diagram-editor input[type="checkbox"], .diagram-editor input[type="radio"],
+.mxPopupMenu input[type="checkbox"], .mxPopupMenu input[type="radio"],
+.mxWindow input[type="checkbox"], .mxWindow input[type="radio"],
+.geDialog input[type="checkbox"], .geDialog input[type="radio"] {
+  vertical-align: text-bottom;
+}
+
+.fullScreenWrapper .buttons &gt; .buttonwrapper:first-child {
+  /* Hide the "Exit Full Screen" button. We have a tool bar entry for this. */
+  display: none !important;
+}
+
+/**
+ * Overwrite XWiki skin styles
+ */
+.diagram-editor *,
+.mxPopupMenu *,
+.mxWindow *,
+.geDialog,
+.geDialog * {
+  box-sizing: content-box;
+}
+
+.mxPopupMenu,
+.mxWindow,
+.geDialog {
+  /* We need the same font size as on draw.io because the dialog height is hard-coded. */
+  font-size: 10pt;
+}
+
+.diagram-editor button, .diagram-editor select,
+.mxPopupMenu button, .mxPopupMenu select,
+.mxWindow button, .mxWindow select,
+.geDialog button, .geDialog select {
+  box-sizing: border-box;
+}
+
+.diagram-editor input[type="text"],
+.mxPopupMenu input[type="text"],
+.mxWindow input[type="text"],
+.geDialog input[type="text"] {
+  font-size: inherit;
+  height: auto;
+  padding: 1px;
+}
+
+.diagram-editor img,
+.mxPopupMenu img,
+.mxWindow img,
+.geDialog img {
+  vertical-align: baseline;
+}
+
+.diagram-editor hr,
+.mxPopupMenu hr,
+.mxWindow hr,
+.geDialog hr {
+  margin: 0;
+}
+
+.mxPopupMenu table,
+.mxWindow table,
+.geDialog table {
+  margin-bottom: 0;
+  width: auto;
+}
+
+.diagram-editor table &gt; tbody &gt; tr &gt; td,
+.mxPopupMenu table &gt; tbody &gt; tr &gt; td,
+.mxWindow table &gt; tbody &gt; tr &gt; td,
+.geDialog table &gt; tbody &gt; tr &gt; td {
+  border-top: 0 none;
+}
+
+.geDialog table &gt; tbody &gt; tr &gt; td {
+  padding: 0;
+  vertical-align: baseline;
+}
+
+/**
+ * Diagram Viewer
+ */
+.diagram {
+  min-height: 25px;
+}
+
+/**
+ * Diagram Macro
+ */
+.geDiagramContainer,
+.diagram-container &gt; .thumbnail {
+  max-width: 100%;
+}
+
+.diagram-container &gt; .thumbnail {
+  display: inline-block;
+}
+
+.diagram-container &gt; .thumbnail .box {
+  margin-bottom: 0;
+}
+
+.diagram-container &gt; .thumbnail svg {
+  max-width: 100%;
+}</code>
+    </property>
+    <property>
+      <contentType>CSS</contentType>
+    </property>
+    <property>
+      <name/>
+    </property>
+    <property>
+      <parse>1</parse>
     </property>
     <property>
       <use>onDemand</use>

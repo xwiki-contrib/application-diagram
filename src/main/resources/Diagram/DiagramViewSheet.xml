@@ -64,7 +64,7 @@
       &lt;img src="$diagramURL" alt="$escapetool.xml($doc.plainTitle)" /&gt;
     {{/html}}
   #else
-    #set ($discard = $xwiki.ssx.use('Diagram.DiagramViewSheet'))
+    #set ($discard = $xwiki.ssx.use('Diagram.DiagramSheet'))
     #set ($discard = $xwiki.jsx.use('Diagram.DiagramViewSheet'))
     {{html clean="false"}}
     ## Check if the query contains the parameter for getting the diagram from URL.
@@ -157,12 +157,14 @@
     <property>
       <code>// mxGraph Client Configuration
 var mxBasePath = "$services.webjars.url('org.xwiki.contrib:mxgraph-client', '')";
-var mxLoadResources = false;
+var mxLanguage = '$xcontext.locale';
 
-var mxGraphViewerBasePath = "$services.webjars.url('org.xwiki.contrib:mxgraph-editor', '')";
+var mxGraphEditorBasePath = "$services.webjars.url('org.xwiki.contrib:mxgraph-editor', '')";
 
 // Diagram Viewer Configuration
 var diagramViewerBasePath = "$services.webjars.url('org.xwiki.contrib:draw.io', '')";
+var RESOURCES_PATH = diagramViewerBasePath + 'resources';
+var RESOURCE_BASE = RESOURCES_PATH + '/dia';
 var STENCIL_PATH = diagramViewerBasePath + 'stencils';
 var IMAGE_PATH = diagramViewerBasePath + 'images';
 var STYLE_PATH = CSS_PATH = diagramViewerBasePath + 'styles';
@@ -173,19 +175,25 @@ var urlParams = {};
 
 require.config({
   paths: {
+    'mxgraph-init': diagramViewerBasePath + 'js/draw.io.init.min',
     'mxgraph-client': mxBasePath + 'mxClient.min',
-    'sanitizer': mxGraphViewerBasePath + 'sanitizer/sanitizer.min',
-    'mxgraph-viewer': mxGraphViewerBasePath + 'mxGraphViewer.min',
-    'draw.io.viewer': diagramViewerBasePath + 'js/draw.io.viewer.min',
+    'sanitizer': mxGraphEditorBasePath + 'sanitizer/sanitizer.min',
+    'mxgraph-viewer': mxGraphEditorBasePath + 'mxGraphViewer.min',
     'pako': diagramViewerBasePath + 'js/deflate/pako.min',
+    // Used by the lightbox.
+    'spin': diagramViewerBasePath + 'js/spin/spin.min',
+    'draw.io.viewer': diagramViewerBasePath + 'js/draw.io.viewer.min',
     'diagram-utils': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'param=1')
   },
   shim: {
+    'mxgraph-client': {
+      deps: ['mxgraph-init']
+    },
     'mxgraph-viewer': {
       deps: ['mxgraph-client', 'sanitizer']
     },
     'draw.io.viewer': {
-      deps: ['mxgraph-viewer', 'pako-global']
+      deps: ['mxgraph-viewer', 'pako-global', 'spin-global']
     }
   },
   map: {
@@ -198,6 +206,11 @@ require.config({
 define('pako-global', ['pako'], function(pako) {
   // draw.io expects a global variable.
   window.pako = pako;
+});
+
+define('spin-global', ['spin'], function(spin) {
+  // draw.io expects a global variable.
+  window.Spinner = spin;
 });</code>
     </property>
     <property>
@@ -309,34 +322,26 @@ define('pako-global', ['pako'], function(pako) {
   // This is required for the clipart images.
   GraphViewer.prototype.imageBaseUrl = getOrigin();
 
+  // We don't support loading multiple pages (tabbed UI).
+  EditorUi.prototype.initPages = function() {};
+
   $.fn.viewDiagram = function(options) {
     options = $.extend({
-      lightbox: false
+      lightbox: false,
+      toolbar: 'zoom layers lightbox'
     }, options);
     return this.each(function() {
-      var graphViewer = new GraphViewer(this, mxUtils.parseXml(getDiagramXML(
-        window.location.href, $(this))).documentElement, options);
-      graphViewer.fitGraph();
+      var diagramXML = diagramUtils.getDiagramXMLFromURL(window.location.href) || $(this).data('model');
+      var diagramRootNode = mxUtils.parseXml(diagramXML).documentElement;
+      var graphViewer = new GraphViewer(this, diagramRootNode, options);
     }).removeClass('loading');
   };
 
-  var diagramViewerDeferred = $.Deferred();
-  // Load the default theme. The theme controls how the shapes are rendered.
-  mxUtils.get(STYLE_PATH + '/default.xml', function(response) {
-    // Configures the default viewer theme.
+  return diagramUtils.loadTranslationAndTheme().done(function(theme) {
+    // Configure the default viewer theme.
     Graph.prototype.defaultThemes = Graph.prototype.defaultThemes || {};
-    Graph.prototype.defaultThemes[Graph.prototype.defaultThemeName] = response.getDocumentElement();
-    diagramViewerDeferred.resolve();
-  }, function() {
-    // Failed to load the theme.
-    diagramViewerDeferred.reject();
+    Graph.prototype.defaultThemes[Graph.prototype.defaultThemeName] = theme;
   });
-
-  function getDiagramXML(url, container) {
-    return diagramUtils.getDiagramXMLFromURL(url) || container.data('model');
-  }
-
-  return diagramViewerDeferred.promise();
 });</code>
     </property>
     <property>
@@ -442,141 +447,6 @@ define('pako-global', ['pako'], function(pako) {
     </property>
     <property>
       <parse>1</parse>
-    </property>
-    <property>
-      <use>onDemand</use>
-    </property>
-  </object>
-  <object>
-    <name>Diagram.DiagramViewSheet</name>
-    <number>0</number>
-    <className>XWiki.StyleSheetExtension</className>
-    <guid>c2361138-48e0-45a8-9f20-cb7caddc2b77</guid>
-    <class>
-      <name>XWiki.StyleSheetExtension</name>
-      <customClass/>
-      <customMapping/>
-      <defaultViewSheet/>
-      <defaultEditSheet/>
-      <defaultWeb/>
-      <nameField/>
-      <validationScript/>
-      <cache>
-        <cache>0</cache>
-        <disabled>0</disabled>
-        <displayType>select</displayType>
-        <multiSelect>0</multiSelect>
-        <name>cache</name>
-        <number>6</number>
-        <prettyName>Caching policy</prettyName>
-        <relationalStorage>0</relationalStorage>
-        <separator> </separator>
-        <separators>|, </separators>
-        <size>1</size>
-        <unmodifiable>0</unmodifiable>
-        <values>long|short|default|forbid</values>
-        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
-      </cache>
-      <code>
-        <contenttype>PureText</contenttype>
-        <disabled>0</disabled>
-        <editor>PureText</editor>
-        <name>code</name>
-        <number>3</number>
-        <prettyName>Code</prettyName>
-        <rows>20</rows>
-        <size>50</size>
-        <unmodifiable>0</unmodifiable>
-        <classType>com.xpn.xwiki.objects.classes.TextAreaClass</classType>
-      </code>
-      <contentType>
-        <cache>0</cache>
-        <disabled>0</disabled>
-        <displayType>select</displayType>
-        <multiSelect>0</multiSelect>
-        <name>contentType</name>
-        <number>1</number>
-        <prettyName>Content Type</prettyName>
-        <relationalStorage>0</relationalStorage>
-        <separator> </separator>
-        <separators>|, </separators>
-        <size>1</size>
-        <unmodifiable>0</unmodifiable>
-        <values>CSS|LESS</values>
-        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
-      </contentType>
-      <name>
-        <disabled>0</disabled>
-        <name>name</name>
-        <number>2</number>
-        <prettyName>Name</prettyName>
-        <size>30</size>
-        <unmodifiable>0</unmodifiable>
-        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
-      </name>
-      <parse>
-        <disabled>0</disabled>
-        <displayFormType>select</displayFormType>
-        <displayType>yesno</displayType>
-        <name>parse</name>
-        <number>5</number>
-        <prettyName>Parse content</prettyName>
-        <unmodifiable>0</unmodifiable>
-        <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
-      </parse>
-      <use>
-        <cache>0</cache>
-        <disabled>0</disabled>
-        <displayType>select</displayType>
-        <multiSelect>0</multiSelect>
-        <name>use</name>
-        <number>4</number>
-        <prettyName>Use this extension</prettyName>
-        <relationalStorage>0</relationalStorage>
-        <separator> </separator>
-        <separators>|, </separators>
-        <size>1</size>
-        <unmodifiable>0</unmodifiable>
-        <values>currentPage|onDemand|always</values>
-        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
-      </use>
-    </class>
-    <property>
-      <cache>long</cache>
-    </property>
-    <property>
-      <code>.diagram {
-  min-height: 25px;
-}
-
-/**
- * Diagram Macro
- */
-.geDiagramContainer,
-.diagram-container &gt; .thumbnail {
-  max-width: 100%;
-}
-
-.diagram-container &gt; .thumbnail {
-  display: inline-block;
-}
-
-.diagram-container &gt; .thumbnail .box {
-  margin-bottom: 0;
-}
-
-.diagram-container &gt; .thumbnail svg {
-  max-width: 100%;
-}</code>
-    </property>
-    <property>
-      <contentType>CSS</contentType>
-    </property>
-    <property>
-      <name/>
-    </property>
-    <property>
-      <parse>0</parse>
     </property>
     <property>
       <use>onDemand</use>

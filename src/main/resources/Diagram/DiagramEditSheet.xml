@@ -45,7 +45,7 @@
   ## Disable the keyboard shortcuts because they prevent the user from typing text inside the diagram (the diagram
   ## editor doesn't use standard text fields for entering the labels for the various shapes the diagram is made of)
   #set ($keyboardShortcutsEnabled = false)
-  #set ($discard = $xwiki.ssx.use('Diagram.DiagramEditSheet'))
+  #set ($discard = $xwiki.ssx.use('Diagram.DiagramSheet'))
   #set ($discard = $xwiki.jsx.use('Diagram.DiagramEditSheet'))
   &lt;div class="diagram-editor loading"&gt;
     &lt;input class="diagram-content" type="hidden" name="content" value="$escapetool.xml($tdoc.content)" /&gt;
@@ -934,27 +934,10 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki
     });
   };
 
-  //
-  // Load the translation files.
-  //
-  var diagramEditorDeferred = $.Deferred();
-  mxResources.loadDefaultBundle = false;
-  var bundle = mxResources.getDefaultBundle(RESOURCE_BASE, mxLanguage) ||
-    mxResources.getSpecialBundle(RESOURCE_BASE, mxLanguage);
-  mxUtils.getAll([bundle, STYLE_PATH + '/default.xml'], function(response) {
-    // Adds bundle text to resources.
-    mxResources.parse(response[0].getText());
-
-    // Configures the default editor theme.
-    themes[Graph.prototype.defaultThemeName] = response[1].getDocumentElement();
-
-    diagramEditorDeferred.resolve();
-  }, function() {
-    // Failed to load resources.
-    diagramEditorDeferred.reject();
+  return diagramUtils.loadTranslationAndTheme().done(function(theme) {
+    // Configure the default editor theme.
+    themes[Graph.prototype.defaultThemeName] = theme;
   });
-
-  return diagramEditorDeferred.promise();
 });</code>
     </property>
     <property>
@@ -1057,205 +1040,6 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki
     </property>
     <property>
       <name>Startup</name>
-    </property>
-    <property>
-      <parse>1</parse>
-    </property>
-    <property>
-      <use>onDemand</use>
-    </property>
-  </object>
-  <object>
-    <name>Diagram.DiagramEditSheet</name>
-    <number>0</number>
-    <className>XWiki.StyleSheetExtension</className>
-    <guid>a40fe0eb-3afe-4d87-97ef-e0da6827be14</guid>
-    <class>
-      <name>XWiki.StyleSheetExtension</name>
-      <customClass/>
-      <customMapping/>
-      <defaultViewSheet/>
-      <defaultEditSheet/>
-      <defaultWeb/>
-      <nameField/>
-      <validationScript/>
-      <cache>
-        <cache>0</cache>
-        <disabled>0</disabled>
-        <displayType>select</displayType>
-        <multiSelect>0</multiSelect>
-        <name>cache</name>
-        <number>6</number>
-        <prettyName>Caching policy</prettyName>
-        <relationalStorage>0</relationalStorage>
-        <separator> </separator>
-        <separators>|, </separators>
-        <size>1</size>
-        <unmodifiable>0</unmodifiable>
-        <values>long|short|default|forbid</values>
-        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
-      </cache>
-      <code>
-        <contenttype>PureText</contenttype>
-        <disabled>0</disabled>
-        <editor>PureText</editor>
-        <name>code</name>
-        <number>3</number>
-        <prettyName>Code</prettyName>
-        <rows>20</rows>
-        <size>50</size>
-        <unmodifiable>0</unmodifiable>
-        <classType>com.xpn.xwiki.objects.classes.TextAreaClass</classType>
-      </code>
-      <contentType>
-        <cache>0</cache>
-        <disabled>0</disabled>
-        <displayType>select</displayType>
-        <multiSelect>0</multiSelect>
-        <name>contentType</name>
-        <number>1</number>
-        <prettyName>Content Type</prettyName>
-        <relationalStorage>0</relationalStorage>
-        <separator> </separator>
-        <separators>|, </separators>
-        <size>1</size>
-        <unmodifiable>0</unmodifiable>
-        <values>CSS|LESS</values>
-        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
-      </contentType>
-      <name>
-        <disabled>0</disabled>
-        <name>name</name>
-        <number>2</number>
-        <prettyName>Name</prettyName>
-        <size>30</size>
-        <unmodifiable>0</unmodifiable>
-        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
-      </name>
-      <parse>
-        <disabled>0</disabled>
-        <displayFormType>select</displayFormType>
-        <displayType>yesno</displayType>
-        <name>parse</name>
-        <number>5</number>
-        <prettyName>Parse content</prettyName>
-        <unmodifiable>0</unmodifiable>
-        <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
-      </parse>
-      <use>
-        <cache>0</cache>
-        <disabled>0</disabled>
-        <displayType>select</displayType>
-        <multiSelect>0</multiSelect>
-        <name>use</name>
-        <number>4</number>
-        <prettyName>Use this extension</prettyName>
-        <relationalStorage>0</relationalStorage>
-        <separator> </separator>
-        <separators>|, </separators>
-        <size>1</size>
-        <unmodifiable>0</unmodifiable>
-        <values>currentPage|onDemand|always</values>
-        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
-      </use>
-    </class>
-    <property>
-      <cache>long</cache>
-    </property>
-    <property>
-      <code>/* The diagram editor styles should be loaded after the skin and before our overwrites. */
-@import url("$services.webjars.url('org.xwiki.contrib:mxgraph-editor', 'styles/grapheditor.css')");
-
-.diagram-editor {
-  height: 600px;
-  min-height: 20px;
-  position: relative;
-}
-
-.diagram-editor input[type="checkbox"], .diagram-editor input[type="radio"],
-.mxPopupMenu input[type="checkbox"], .mxPopupMenu input[type="radio"],
-.mxWindow input[type="checkbox"], .mxWindow input[type="radio"],
-.geDialog input[type="checkbox"], .geDialog input[type="radio"] {
-  vertical-align: text-bottom;
-}
-
-.fullScreenWrapper .buttons &gt; .buttonwrapper:first-child {
-  /* Hide the "Exit Full Screen" button. We have a tool bar entry for this. */
-  display: none !important;
-}
-
-/**
- * Overwrite XWiki skin styles
- */
-.diagram-editor *,
-.mxPopupMenu *,
-.mxWindow *,
-.geDialog,
-.geDialog * {
-  box-sizing: content-box;
-}
-
-.mxPopupMenu,
-.mxWindow,
-.geDialog {
-  /* We need the same font size as on draw.io because the dialog height is hard-coded. */
-  font-size: 10pt;
-}
-
-.diagram-editor button, .diagram-editor select,
-.mxPopupMenu button, .mxPopupMenu select,
-.mxWindow button, .mxWindow select,
-.geDialog button, .geDialog select {
-  box-sizing: border-box;
-}
-
-.diagram-editor input[type="text"],
-.mxPopupMenu input[type="text"],
-.mxWindow input[type="text"],
-.geDialog input[type="text"] {
-  font-size: inherit;
-  height: auto;
-  padding: 1px;
-}
-
-.diagram-editor img,
-.mxPopupMenu img,
-.mxWindow img,
-.geDialog img {
-  vertical-align: baseline;
-}
-
-.diagram-editor hr,
-.mxPopupMenu hr,
-.mxWindow hr,
-.geDialog hr {
-  margin: 0;
-}
-
-.mxPopupMenu table,
-.mxWindow table,
-.geDialog table {
-  margin-bottom: 0;
-  width: auto;
-}
-
-.diagram-editor table &gt; tbody &gt; tr &gt; td,
-.mxPopupMenu table &gt; tbody &gt; tr &gt; td,
-.mxWindow table &gt; tbody &gt; tr &gt; td,
-.geDialog table &gt; tbody &gt; tr &gt; td {
-  border-top: 0 none;
-}
-
-.geDialog table &gt; tbody &gt; tr &gt; td {
-  padding: 0;
-  vertical-align: baseline;
-}</code>
-    </property>
-    <property>
-      <contentType>CSS</contentType>
-    </property>
-    <property>
-      <name/>
     </property>
     <property>
       <parse>1</parse>

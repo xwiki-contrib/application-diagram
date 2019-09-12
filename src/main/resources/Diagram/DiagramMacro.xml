@@ -162,7 +162,7 @@
     <property>
       <code>{{velocity output="false"}}
 #macro (displayDiagram $reference)
-  #set ($discard = $xwiki.ssx.use('Diagram.DiagramViewSheet'))
+  #set ($discard = $xwiki.ssx.use('Diagram.DiagramSheet'))
   (% class="diagram-container" %)(((
     (% class="thumbnail" %)(((
       #if ($services.security.authorization.hasAccess('view', $reference))
