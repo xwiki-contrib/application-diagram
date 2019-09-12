@@ -163,45 +163,50 @@
       <code>{{velocity output="false"}}
 #macro (displayDiagram $reference)
   #set ($discard = $xwiki.ssx.use('Diagram.DiagramSheet'))
-  (% class="diagram-container" %)(((
-    (% class="thumbnail" %)(((
-      #if ($services.security.authorization.hasAccess('view', $reference))
-        #set ($diagram = $xwiki.getDocument($reference))
-        #set ($diagramTitle = $diagram.plainTitle)
-        #if ($diagram.getObject('Diagram.DiagramClass'))
-          #if ($xcontext.action == 'edit' || ($xcontext.macro.params.cached == 'true' &amp;&amp; $xcontext.action != 'export'))
-            {{html clean="false"}}
-            $!diagram.getValue('svg')
-            {{/html}}
-          #else
-            {{display reference="$services.rendering.escape($reference, $xcontext.macro.doc.syntax)" /}}
-          #end
-        #else
-          {{warning}}$services.localization.render('diagram.macro.invalidReference'){{/warning}}
-        #end
+  #set ($showCaption = true)
+  #if ($services.security.authorization.hasAccess('view', $reference))
+    #set ($diagram = $xwiki.getDocument($reference))
+    #set ($diagramTitle = $diagram.plainTitle)
+    #if ($diagram.getObject('Diagram.DiagramClass'))
+      #if ($xcontext.action == 'edit' || ($xcontext.macro.params.cached == 'true' &amp;&amp; $xcontext.action != 'export'))
+        #set ($output = "{{html clean='false'}}$!diagram.getValue('svg'){{/html}}")
       #else
-        {{warning}}$services.localization.render('diagram.macro.viewNotAllowed'){{/warning}}
-        #if ($reference.name == $services.model.getEntityReference('DOCUMENT', 'default'))
-          #set ($diagramTitle = $reference.parent.name)
-        #else
-          #set ($diagramTitle = $reference.name)
-        #end
+        #set ($output = "{{display reference='$services.rendering.escape($reference, $xcontext.macro.doc.syntax)' /}}")
+        #set ($showCaption = false)
       #end
+    #else
+      #set ($output = "{{warning}}$services.localization.render('diagram.macro.invalidReference'){{/warning}}")
+    #end
+  #else
+    #set ($output = "{{warning}}$services.localization.render('diagram.macro.viewNotAllowed'){{/warning}}")
+    #if ($reference.name == $services.model.getEntityReference('DOCUMENT', 'default'))
+      #set ($diagramTitle = $reference.parent.name)
+    #else
+      #set ($diagramTitle = $reference.name)
+    #end
+  #end
+  #if ($showCaption)
+    (% class="diagram-container" %)(((
+      (% class="thumbnail" %)(((
+  #end
+  $output
+  #if ($showCaption)
 
-      {{html clean="true"}}
-      &lt;div class="caption"&gt;
-        &lt;a class="diagram-title" href="$xwiki.getURL($reference)"
-          title="$escapetool.xml($services.localization.render('diagram.macro.view'))"
-          &gt;$escapetool.xml($diagramTitle)&lt;/a&gt;
-        #if ($services.security.authorization.hasAccess('edit', $reference))
-          &lt;a class="diagram-edit" href="$xwiki.getURL($reference, 'edit', $NULL)"
-            title="$escapetool.xml($services.localization.render('diagram.macro.edit'))"
-            target="_blank"&gt;$services.icon.renderHTML('pencil')&lt;/a&gt;
-        #end
-      &lt;/div&gt;
-      {{/html}}
+        {{html clean="true"}}
+        &lt;div class="caption"&gt;
+          &lt;a class="diagram-title" href="$xwiki.getURL($reference)"
+            title="$escapetool.xml($services.localization.render('diagram.macro.view'))"
+            &gt;$escapetool.xml($diagramTitle)&lt;/a&gt;
+          #if ($services.security.authorization.hasAccess('edit', $reference))
+            &lt;a class="diagram-edit" href="$xwiki.getURL($reference, 'edit', $NULL)"
+              title="$escapetool.xml($services.localization.render('diagram.macro.edit'))"
+              target="_blank"&gt;$services.icon.renderHTML('pencil')&lt;/a&gt;
+          #end
+        &lt;/div&gt;
+        {{/html}}
+      )))
     )))
-  )))
+  #end
 #end
 
 #macro (createDiagram $reference)

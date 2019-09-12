@@ -68,7 +68,9 @@
     #set ($discard = $xwiki.jsx.use('Diagram.DiagramViewSheet'))
     {{html clean="false"}}
     ## Check if the query contains the parameter for getting the diagram from URL.
-    &lt;div class="diagram loading" #if ("$!request.source" == '') data-model="$escapetool.xml($tdoc.content)" #end&gt;&lt;/div&gt;
+    &lt;div class="diagram loading"#if ("$!request.source" == '') data-model="$escapetool.xml($tdoc.content)"
+      data-reference="$escapetool.xml($services.model.serialize($tdoc.documentReference, 'default'))"
+      data-title="$escapetool.xml($tdoc.plainTitle)"#end&gt;&lt;/div&gt;
     {{/html}}
   #end
 #end
@@ -320,9 +322,6 @@ define('spin-global', ['spin'], function(spin) {
   // This is required for the clipart images.
   GraphViewer.prototype.imageBaseUrl = getOrigin();
 
-  // We don't support loading multiple pages (tabbed UI).
-  EditorUi.prototype.initPages = function() {};
-
   // Fix the diagram printing from the lightbox. mxPrintPreview#addGraphFragment optimizes the diagram rendering when
   // previewing the print by rendering only the shapes that intersect the clip associated with the print page. The
   // computations are wrong in view mode (either when computing the bounding rect of the shapes or the clip of the print
@@ -333,15 +332,48 @@ define('spin-global', ['spin'], function(spin) {
   // See https://github.com/jgraph/mxgraph/commit/d5c1345ec946b9d55a9c2a8c1c5df0f154561edf
   mxPrintPreview.prototype.clipping = false;
 
-  $.fn.viewDiagram = function(options) {
-    options = $.extend({
+  var getDiagramViewerConfig = function(diagramContainer) {
+    var config = {
+      title: diagramContainer.data('title'),
       lightbox: false,
-      toolbar: 'zoom layers lightbox'
-    }, options);
+      toolbar: 'zoom layers pages lightbox',
+      'toolbar-buttons': {
+        edit: {
+          title: mxResources.get('edit'),
+          image: Editor.editImage
+        }
+      }
+    };
+    if (diagramContainer.data('reference')) {
+      config.toolbar = 'edit ' + config.toolbar;
+      var diagramReference = XWiki.Model.resolve(diagramContainer.data('reference'), XWiki.EntityType.DOCUMENT);
+      config.reference = diagramReference;
+      var diagramEditURL = new XWiki.Document(diagramReference).getURL('edit');
+      config['toolbar-buttons'].edit.handler = function() {
+        window.location.href = diagramEditURL;
+      };
+    }
+    var toolbar = diagramContainer.data('toolbar');
+    if (toolbar === 'false') {
+      delete config.toolbar;
+    } else if (typeof toolbar === 'string') {
+      config.toolbar = toolbar;
+    }
+    return config;
+  };
+
+  $.fn.viewDiagram = function(configOverride) {
     return this.each(function() {
       var diagramXML = diagramUtils.getDiagramXMLFromURL(window.location.href) || $(this).data('model');
       var diagramRootNode = mxUtils.parseXml(diagramXML).documentElement;
-      var graphViewer = new GraphViewer(this, diagramRootNode, options);
+      var config = $.extend(getDiagramViewerConfig($(this)), configOverride);
+      var graphViewer = new GraphViewer(this, diagramRootNode, config);
+      // Make the diagram title from the tool bar a link to the diagram page.
+      if (config.title &amp;&amp; config.reference) {
+        var diagramViewURL = new XWiki.Document(config.reference).getURL();
+        var diagramLink = $('&lt;a/&gt;').attr('href', diagramViewURL).text(config.title);
+        $(graphViewer.toolbar).children().last().empty().append(diagramLink);
+      }
     }).removeClass('loading');
   };
 
