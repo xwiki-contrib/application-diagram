@@ -66,11 +66,20 @@
   #else
     #set ($discard = $xwiki.ssx.use('Diagram.DiagramSheet'))
     #set ($discard = $xwiki.jsx.use('Diagram.DiagramViewSheet'))
+    #set ($toolbar = 'zoom layers pages lightbox')
+    #if ("$!request.source" == '' &amp;&amp; $services.security.authorization.hasAccess('edit'))
+      #set ($toolbar = "edit $toolbar")
+    #end
     {{html clean="false"}}
     ## Check if the query contains the parameter for getting the diagram from URL.
-    &lt;div class="diagram loading"#if ("$!request.source" == '') data-model="$escapetool.xml($tdoc.content)"
-      data-reference="$escapetool.xml($services.model.serialize($tdoc.documentReference, 'default'))"
-      data-title="$escapetool.xml($tdoc.plainTitle)"#end&gt;&lt;/div&gt;
+    &lt;div class="diagram loading"
+      #if ("$!request.source" == '')
+        data-model="$escapetool.xml($tdoc.content)"
+        data-reference="$escapetool.xml($services.model.serialize($tdoc.documentReference, 'default'))"
+        data-title="$escapetool.xml($tdoc.plainTitle)"
+      #end
+      data-toolbar="$escapetool.xml($toolbar)"
+    &gt;&lt;/div&gt;
     {{/html}}
   #end
 #end
