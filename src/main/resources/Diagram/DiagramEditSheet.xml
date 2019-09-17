@@ -452,8 +452,8 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki
     var deferred = $.Deferred();
     var docRef = xm.documentReference;
     var fileName = (docRef.name == 'WebHome' ? docRef.parent.name : docRef.name) + '.thumbnail.png';
-    // Keep only the last version of the attachment. Since 'toBlob' is not supported by IE the attachment won't be saved in this browser,
-    // falling back to the use of svg for pdf export.
+    // Keep only the last version of the attachment. Since 'toBlob' is not supported by IE the attachment won't be
+    // saved in this browser, falling back to the use of svg for pdf export.
     deleteFile(fileName).always(function() {
       try {
         canvas.toBlob(function(blob) {
