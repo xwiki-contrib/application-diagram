@@ -143,10 +143,14 @@ define ('diagram-utils', ['jquery', 'mxgraph-common'], function($) {
     if (hashIndex &gt; -1) {
       // Exclude first 2 letters from hash (#R).
       let hash = url.substring(hashIndex+2);
-      let decodedData = decodeURIComponent(hash);
-      let graph = new Graph();
-      let rawDiagram = graph.decompress(decodedData);
-      return rawDiagram;
+      try {
+        let decodedData = decodeURIComponent(hash);
+        let graph = new Graph();
+        let rawDiagram = graph.decompress(decodedData);
+        return rawDiagram;
+      } catch (e) {
+        console.error (e.stack)
+      }
     }
     return null;
   };
