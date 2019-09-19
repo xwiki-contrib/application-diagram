@@ -191,10 +191,10 @@ var urlParams = {};
 require.config({
   paths: {
     'mxgraph-init': diagramViewerBasePath + 'js/draw.io.init$suffix',
-    'mxgraph-client': mxBasePath + 'mxClient$suffix',
+    'mxgraph-client': mxBasePath + 'mxClient.bundle$suffix',
     'sanitizer': mxGraphEditorBasePath + 'sanitizer/sanitizer.min',
     'mxgraph-viewer': mxGraphEditorBasePath + 'mxGraphViewer$suffix',
-    'pako': diagramViewerBasePath + 'js/deflate/pako.min',
+    'pako': mxGraphEditorBasePath + 'deflate/pako.min',
     // Used by the lightbox.
     'spin': diagramViewerBasePath + 'js/spin/spin.min',
     'draw.io.viewer': diagramViewerBasePath + 'js/draw.io.viewer$suffix',
@@ -314,7 +314,7 @@ define('spin-global', ['spin'], function(spin) {
       <cache>long</cache>
     </property>
     <property>
-      <code>define('diagramViewer', ['jquery', 'diagram-utils', 'draw.io.viewer'], function($, diagramUtils) {
+      <code>define('diagram-viewer', ['jquery', 'diagram-utils', 'draw.io.viewer'], function($, diagramUtils) {
   var getOrigin = function() {
     var origin = window.location.origin;
     if (!origin) {
@@ -485,7 +485,7 @@ define('spin-global', ['spin'], function(spin) {
       <cache>long</cache>
     </property>
     <property>
-      <code>require(['jquery', 'diagramViewer'], function($, diagramViewerPromise) {
+      <code>require(['jquery', 'diagram-viewer'], function($, diagramViewerPromise) {
   diagramViewerPromise.done(function() {
     $('.diagram').viewDiagram();
   });

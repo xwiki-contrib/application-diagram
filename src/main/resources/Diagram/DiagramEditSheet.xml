@@ -181,6 +181,8 @@ var urlParams = (function(params) {
   'pages': '0',
   // Disable the GitHub integration.
   'gh': '0',
+  // Disable the GitLab integration.
+  'gl': '0',
   // Disable the Dropbox integration.
   'db': '0',
   // Disable the Google Drive integration.
@@ -199,12 +201,12 @@ var DriveFile = DropboxFile = GitHubFile = OneDriveFile = TrelloFile = false;
 require.config({
   paths: {
     'mxgraph-init': diagramEditorBasePath + 'js/draw.io.init$suffix',
-    'mxgraph-client': mxBasePath + 'mxClient$suffix',
+    'mxgraph-client': mxBasePath + 'mxClient.bundle$suffix',
     'jscolor': mxGraphEditorBasePath + 'jscolor/jscolor.min',
     'sanitizer': mxGraphEditorBasePath + 'sanitizer/sanitizer.min',
     'mxgraph-editor': mxGraphEditorBasePath + 'mxGraphEditor$suffix',
-    'base64': diagramEditorBasePath + 'js/deflate/base64.min',
-    'pako': diagramEditorBasePath + 'js/deflate/pako.min',
+    'base64': mxGraphEditorBasePath + 'deflate/base64.min',
+    'pako': mxGraphEditorBasePath + 'deflate/pako.min',
     'spin': diagramEditorBasePath + 'js/spin/spin.min',
     'jszip': diagramEditorBasePath + 'js/jszip/jszip.min',
     'draw.io': diagramEditorBasePath + 'js/draw.io$suffix',
@@ -351,7 +353,7 @@ define('xwiki-utils', ['jquery', 'xwiki-meta'], function($, xm) {
 /**
  * Adds support for editing diagrams stored in XWiki pages.
  */
-define('diagramStore', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki-events-bridge'],
+define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki-events-bridge'],
     function($, xm, xutils) {
   var files = [];
   window._xfiles = files;
@@ -638,8 +640,8 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki
       <cache>long</cache>
     </property>
     <property>
-      <code>define('diagramEditor', ['jquery', 'diagramStore', 'xwiki-utils', 'diagram-utils'], function($,
-        diagramStore, xutils, diagramUtils) {
+      <code>define('diagram-editor', ['jquery', 'diagram-store', 'diagram-utils', 'xwiki-utils'], function($,
+        diagramStore, diagramUtils, xutils) {
 
   // These variables are used to decide if an image should be uploaded at original resolution or
   // should be declined for being too big.
@@ -652,7 +654,9 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki
   //
   var createDiagramEditor = function(options) {
     options = options || {};
-    var editorUI = new App(new Editor(false, options.themes), options.container);
+    var editor = new Editor(/* chromeless: */ uiTheme === 'min', options.themes, /* model: */ null, /* graph: */ null,
+      /* editable: */ true);
+    var editorUI = new App(editor, options.container);
     var file = diagramStore.createFile(editorUI, options.input, options.fileName);
     // The first letter of the file name is used to determine the storage type. Let's use 'X' for XWiki storage.
     editorUI.loadFile('X' + options.fileName, true, file);
@@ -679,6 +683,13 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki
       originalAddSubmenu.apply(this, arguments);
     }
   };
+
+  // Remove the language picker because the diagram editor is configured to use the XWiki language.
+  var originalCreateMenubar = Menus.prototype.createMenubar;
+  Menus.prototype.createMenubar = function(container) {
+    delete this.menus['language'];
+    return originalCreateMenubar.apply(this, arguments);
+  }
 
   //
   // Add support for not displaying 'browser' option from 'Import from' sub-menu
@@ -708,11 +719,11 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki
     // Disable and hide some of the menu entries.
     [
       // File menu
-      'new', 'open', 'save', 'saveAs', 'rename', 'makeCopy', 'close',
+      'synchronize', 'new', 'open', 'save', 'saveAs', 'rename', 'makeCopy', 'close',
       // Extras menu
       'autosave', 'showStartScreen', 'plugins', 'offline', 'chromeApp',
-       // Help menu (Graph Editor)
-      'help',
+       // Help menu
+      'downloadDesktop', 'useOffline',
       // ExportAs
       'exportHtml'
     ].forEach(function(actionName) {
@@ -734,16 +745,12 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki
         subMenu.enabled = subMenu.visible = false;
       }
     });
-
-    // Remove the language picker because the diagram editor is configured to use the XWiki language.
-    // The language picker menu entry is not added like the rest so we can't simply disable it.
-    $('body &gt; .geItem &gt; .geIcon.geSprite-globe').last().parent().remove();
   };
 
   // Fix the base URL used when exporting the diagram as image.
-  var oldCreateImageUrlConverter = EditorUi.prototype.createImageUrlConverter;
+  var originalCreateImageUrlConverter = EditorUi.prototype.createImageUrlConverter;
   EditorUi.prototype.createImageUrlConverter = function() {
-    var converter = oldCreateImageUrlConverter.call(this);
+    var converter = originalCreateImageUrlConverter.call(this);
     converter.convert = function(src) {
       // Use baseDomain instead of baseUrl to detect external URLs.
       if (src &amp;&amp; (src.substr(0, 7) === 'http://' || src.substr(0, 8) === 'https://') &amp;&amp;
@@ -756,7 +763,7 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki
   };
 
   // Override for uploading the image as attachment instead of encode it to Base64.
-  var oldImportFiles = EditorUi.prototype.importFiles;
+  var originalImportFiles = EditorUi.prototype.importFiles;
   EditorUi.prototype.importFiles = function(files, x, y, maxSize, fn, resultFn, filterFn, barrierFn, resizeDialog,
                                              maxBytes, resampleThreshold, ignoreEmbeddedXml) {
     var newArgs = arguments;
@@ -775,7 +782,7 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki
         }
       }
     }
-    oldImportFiles.apply(this, newArgs);
+    originalImportFiles.apply(this, newArgs);
   }
 
   var originalLoadUrl = EditorUi.prototype.loadUrl;
@@ -793,9 +800,9 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki
   //
   // Change the URL generated by export for containing the actual host.
   //
-  var oldCreateLink = EditorUi.prototype.createLink;
+  var originalCreateLink = EditorUi.prototype.createLink;
   EditorUi.prototype.createLink = function() {
-    let rawURL = oldCreateLink.apply(this, arguments);
+    let rawURL = originalCreateLink.apply(this, arguments);
     // Do not include '#' because it's automatically added by getURL function below.
     let documentFragmentIndex = rawURL.indexOf('#');
     let documentFragment = rawURL.substring(documentFragmentIndex + 1);
@@ -816,33 +823,10 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki
   //
   // Fix the side bar tool tip: the tool tip position is computed as if the editor takes the full screen.
   //
-  var oldShowTooltip = Sidebar.prototype.showTooltip;
-  Sidebar.prototype.showTooltip = function(elt) {
-    if (this.enableTooltips &amp;&amp; this.showTooltips &amp;&amp; this.currentElt != elt) {
-      // The next usage of mxUtils.bind() is to bind the (private) show function to the side bar object.
-      // We need to overwrite the show function.
-      var oldBind = mxUtils.bind;
-      mxUtils.bind = function(object, method) {
-        // Restore the original function.
-        mxUtils.bind = oldBind;
-        return oldBind(object, function() {
-          var result = method.apply(this, arguments);
-          // Adjust the tool tip coordinates because they are computed as if the editor takes the full screen.
-          // Thus we need to add the editor offset.
-          var offset = $(this.container).parent().offsetParent().offset();
-          $(this.tooltip).css({
-            left: (offset.left + parseInt(this.tooltip.style.left)) + 'px',
-            top: (offset.top + parseInt(this.tooltip.style.top)) + 'px'
-          });
-          $(this.tooltipImage).css({
-            left: (offset.left + parseInt(this.tooltipImage.style.left)) + 'px',
-            top: (offset.top + parseInt(this.tooltipImage.style.top)) + 'px'
-          });
-          return result;
-        });
-      };
-    }
-    oldShowTooltip.apply(this, arguments);
+  Sidebar.prototype.getTooltipOffset = function() {
+    // Adjust the tool tip coordinates with the editor offset.
+    var offset = $(this.editorUi.container).offsetParent().offset();
+    return {x: offset.left, y: offset.top};
   };
 
   //
@@ -851,12 +835,12 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki
   var fixKeyboardShortcutsAction = function(editorUI) {
     var keyboardShortcutsAction = editorUI.actions.get('keyboardShortcuts');
     if (keyboardShortcutsAction) {
-      var oldFunct = keyboardShortcutsAction.funct;
+      var originalFunct = keyboardShortcutsAction.funct;
       keyboardShortcutsAction.funct = function() {
         if (mxClient.IS_SVG) {
           window.open(diagramEditorBasePath + 'shortcuts.svg');
         } else {
-          oldFunct.apply(this, arguments);
+          originalFunct.apply(this, arguments);
         }
       };
     }
@@ -908,6 +892,15 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki
     });
   };
 
+  // mxRuler adds the ruler to the document body instead of adding it to the editor container.
+  var originalMxDualRuler = mxDualRuler;
+  mxDualRuler = function(editorUI, unit) {
+    originalMxDualRuler.apply(this, arguments);
+    $([this.hRuler.container, this.vRuler.container]).appendTo(editorUI.container);
+  };
+  mxDualRuler.prototype = Object.create(originalMxDualRuler.prototype);
+  mxDualRuler.prototype.constructor = mxDualRuler;
+
   //
   // jQuery plugin
   //
@@ -929,6 +922,9 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki
         input: $(this).children('input.diagram-content')
       }, options));
       $(this).removeClass('loading');
+      // We need this CSS class on the body element in order to have proper styling for the UI elements (menus, dialogs,
+      // tooltips) that are added directly under the body element.
+      $(document.body).addClass('geEditor');
       hideFooter(editorUI);
       cleanMenu(editorUI);
       fixKeyboardShortcutsAction(editorUI);
@@ -1036,7 +1032,7 @@ define('diagramStore', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki
       <cache>long</cache>
     </property>
     <property>
-      <code>require(['jquery', 'diagramEditor'], function($, diagramEditorPromise) {
+      <code>require(['jquery', 'diagram-editor'], function($, diagramEditorPromise) {
   diagramEditorPromise.done(function() {
     $('.diagram-editor').editDiagram();
   });

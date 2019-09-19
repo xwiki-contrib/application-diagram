@@ -102,7 +102,7 @@
     <dependency>
       <groupId>org.xwiki.contrib</groupId>
       <artifactId>draw.io</artifactId>
-      <version>8.9.9-1</version>
+      <version>11.2.9-SNAPSHOT</version>
       <scope>runtime</scope>
     </dependency>
   </dependencies>
