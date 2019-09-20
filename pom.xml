@@ -29,7 +29,7 @@
   </parent>
   <groupId>com.xwiki.diagram</groupId>
   <artifactId>application-diagram</artifactId>
-  <version>1.8-SNAPSHOT</version>
+  <version>1.8</version>
   <name>Diagram Application (Pro)</name>
   <packaging>xar</packaging>
   <description>Create various types of diagrams using draw.io</description>
@@ -41,7 +41,7 @@
     <connection>scm:git:git://github.com/xwikisas/application-diagram.git</connection>
     <developerConnection>scm:git:git@github.com:xwikisas/application-diagram.git</developerConnection>
     <url>https://github.com/xwikisas/application-diagram/tree/master</url>
-    <tag>HEAD</tag>
+    <tag>application-diagram-1.8</tag>
   </scm>
   <properties>
     <!-- Don't run CLIRR here since there's no Java code. -->
