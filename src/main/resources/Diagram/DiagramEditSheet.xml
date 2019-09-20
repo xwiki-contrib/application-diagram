@@ -31,15 +31,46 @@
   <parent>Main.WebHome</parent>
   <author>xwiki:XWiki.Admin</author>
   <contentAuthor>xwiki:XWiki.Admin</contentAuthor>
-  <date>1547812861000</date>
-  <contentUpdateDate>1547812861000</contentUpdateDate>
+  <date>1568955700000</date>
+  <contentUpdateDate>1568955700000</contentUpdateDate>
   <version>1.1</version>
   <title/>
   <comment/>
   <minorEdit>false</minorEdit>
   <syntaxId>xwiki/2.1</syntaxId>
   <hidden>true</hidden>
-  <content>{{velocity}}
+  <content>{{include reference="Diagram.ResourceSelector.WebHome" /}}
+
+{{velocity output="false"}}
+#macro (diagramLinkModal)
+  &lt;div class="modal" id="diagramLinkModal" tabindex="-1" role="dialog"
+      aria-labelledby="diagramLinkModal-label" data-backdrop="static" data-keyboard="false"&gt;
+    &lt;div class="modal-dialog modal-lg" role="document"&gt;
+      &lt;div class="modal-content"&gt;
+        &lt;div class="modal-header"&gt;
+          &lt;button type="button" class="close" data-dismiss="modal" aria-label="Close"&gt;
+            &lt;span aria-hidden="true"&gt;&amp;times;&lt;/span&gt;
+          &lt;/button&gt;
+          &lt;div class="modal-title" id="diagramLinkModal-label"&gt;
+            Link
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class="modal-body xform"&gt;
+          #resourceSelector()
+        &lt;/div&gt;
+        &lt;div class="modal-footer"&gt;
+          &lt;button type="button" class="btn btn-default" data-dismiss="modal"&gt;
+            $escapetool.xml($services.localization.render('cancel'))
+          &lt;/button&gt;
+          &lt;button type="button" class="btn btn-primary"&gt;&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+#end
+{{/velocity}}
+
+{{velocity}}
 {{html clean="false"}}
 #if ($doc.getObject('Diagram.DiagramClass'))
   ## Disable the keyboard shortcuts because they prevent the user from typing text inside the diagram (the diagram
@@ -52,6 +83,7 @@
     &lt;input class="diagram-svg" type="hidden" name="Diagram.DiagramClass_0_svg"
       value="$!escapetool.xml($doc.getValue('svg'))" /&gt;
   &lt;/div&gt;
+  #diagramLinkModal()
 #end
 {{/html}}
 {{/velocity}}</content>
@@ -210,7 +242,8 @@ require.config({
     'spin': diagramEditorBasePath + 'js/spin/spin.min',
     'jszip': diagramEditorBasePath + 'js/jszip/jszip.min',
     'draw.io': diagramEditorBasePath + 'js/draw.io$suffix',
-    'diagram-utils': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify')
+    'diagram-utils': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify'),
+    'resourceSelector': new XWiki.Document('WebHome', 'Diagram.ResourceSelector').getURL('jsx', 'minify=$minify')
   },
   shim: {
     'mxgraph-client': ['mxgraph-init'],
@@ -640,8 +673,88 @@ define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwik
       <cache>long</cache>
     </property>
     <property>
-      <code>define('diagram-editor', ['jquery', 'diagram-store', 'diagram-utils', 'xwiki-utils'], function($,
-        diagramStore, diagramUtils, xutils) {
+      <code>/**
+ * Overrides the link dialog in order to support creating links to wiki pages.
+ */
+define('diagram-link', ['jquery', 'xwiki-utils', 'draw.io', 'resourceSelector'], function($, xutils) {
+  // See https://about.draw.io/interactive-diagrams-with-custom-links-and-actions/
+  // See https://desk.draw.io/support/solutions/articles/16000080137
+  // See https://jgraph.github.io/drawio-tools/tools/link.html
+  var xwikiCustomLinkPrefix = 'data:xwiki/reference,';
+
+  var getResourceReferenceFromCustomLink = function(href) {
+    if (typeof href === 'string' &amp;&amp; href.substring(0, xwikiCustomLinkPrefix.length) === xwikiCustomLinkPrefix) {
+      var resourceReference = href.substring(xwikiCustomLinkPrefix.length);
+      var typeSeparatorIndex = resourceReference.indexOf(':');
+      if (typeSeparatorIndex &gt;= 0) {
+        return {
+          type: resourceReference.substring(0, typeSeparatorIndex),
+          reference: resourceReference.substring(typeSeparatorIndex + 1)
+        }
+      }
+    }
+    if (href) {
+      return {
+        type: 'url',
+        reference: href
+      };
+    }
+  };
+
+  var getCustomLinkFromResourceReference = function(resourceReference) {
+    if (resourceReference.type === 'url') {
+      return resourceReference.reference;
+    } else {
+      return xwikiCustomLinkPrefix + resourceReference.type + ':' + resourceReference.reference;
+    }
+  };
+
+  EditorUi.prototype.showLinkDialog = function(value, selectLabel, callback) {
+    $('#diagramLinkModal').selectResource(getResourceReferenceFromCustomLink(value), {
+      selectLabel: selectLabel
+    }).done(function(resourceReference) {
+      callback(getCustomLinkFromResourceReference(resourceReference));
+    });
+  };
+
+  var originalHandleCustomLink = EditorUi.prototype.handleCustomLink;
+  EditorUi.prototype.handleCustomLink = function(href) {
+    let actualHref = href;
+    if (href.substring(0, xwikiCustomLinkPrefix.length) === xwikiCustomLinkPrefix) {
+      let resourceReference = getResourceReferenceFromCustomLink(href);
+      switch (resourceReference.type) {
+        case 'doc':
+          let documentReference = XWiki.Model.resolve(resourceReference.reference, XWiki.EntityType.DOCUMENT,
+            XWiki.currentDocument.documentReference);
+          actualHref = new XWiki.Document(documentReference).getURL();
+          break;
+        case 'attach':
+          let attachmentReference = XWiki.Model.resolve(resourceReference.reference, XWiki.EntityType.ATTACHMENT,
+            XWiki.currentDocument.documentReference);
+          actualHref = xutils.getAttachmentURL(attachmentReference);
+          break;
+        default:
+          actualHref = resourceReference.reference;
+          break;
+      }
+      actualHref = 'data:action/json,' + JSON.stringify({'actions': [{'open': actualHref}]});
+    }
+    return originalHandleCustomLink.call(this, actualHref);
+  };
+
+  var originalGetLinkTitle = EditorUi.prototype.getLinkTitle;
+  EditorUi.prototype.getLinkTitle = function(href) {
+    if (href.substring(0, xwikiCustomLinkPrefix.length) === xwikiCustomLinkPrefix) {
+      let resourceReference = getResourceReferenceFromCustomLink(href);
+      return resourceReference.type + ':' + resourceReference.reference;
+    } else {
+      return originalGetLinkTitle.apply(this, arguments);
+    }
+  };
+});
+
+define('diagram-editor', ['jquery', 'diagram-store', 'diagram-utils', 'xwiki-utils', 'diagram-link'], function($,
+  diagramStore, diagramUtils, xutils) {
 
   // These variables are used to decide if an image should be uploaded at original resolution or
   // should be declined for being too big.
