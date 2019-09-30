@@ -169,7 +169,7 @@
       <cache>long</cache>
     </property>
     <property>
-      <code>/*!
+      <code>/*
 #set ($minify = $services.debug.minify != false)
 #set ($suffix = "#if ($minify).min#end")
 */
