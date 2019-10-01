@@ -49,7 +49,7 @@
     #set ($discard = $response.setContentType('image/svg+xml'))
     #set ($discard = $response.setContentLength($svg.length()))
     #set ($discard = $response.writer.write($svg))
-  #elseif ($xcontext.action == 'export')
+  #elseif ($xcontext.action == 'export' || $request.xpage == 'print')
     #set ($fileName = $doc.name)
     #if ($fileName == 'WebHome')
       #set ($fileName = $doc.documentReference.lastSpaceReference.name)
