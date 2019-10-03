@@ -198,7 +198,9 @@ require.config({
     // Used by the lightbox.
     'spin': diagramViewerBasePath + 'js/spin/spin.min',
     'draw.io.viewer': diagramViewerBasePath + 'js/draw.io.viewer$suffix',
-    'diagram-utils': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify')
+    'xwiki-utils': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify'),
+    'diagram-utils': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify'),
+    'diagram-link-handler': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify')
   },
   shim: {
     'mxgraph-client': ['mxgraph-init'],
@@ -208,6 +210,9 @@ require.config({
   map: {
     'diagram-utils': {
       'mxgraph-common': 'mxgraph-viewer'
+    },
+    'diagram-link-handler': {
+      'draw.io.common': 'draw.io.viewer'
     }
   }
 });
@@ -314,7 +319,7 @@ define('spin-global', ['spin'], function(spin) {
       <cache>long</cache>
     </property>
     <property>
-      <code>define('diagram-viewer', ['jquery', 'diagram-utils', 'draw.io.viewer'], function($, diagramUtils) {
+      <code>define('diagram-viewer', ['jquery', 'diagram-utils', 'diagram-link-handler', 'draw.io.viewer'], function($, diagramUtils) {
   var getOrigin = function() {
     var origin = window.location.origin;
     if (!origin) {

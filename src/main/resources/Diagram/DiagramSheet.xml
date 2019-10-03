@@ -130,9 +130,33 @@
       <cache>long</cache>
     </property>
     <property>
-      <code>//
-// Used in view &amp; edit sheets
-//
+      <code>/**
+ * Generic helper methods.
+ */
+define('xwiki-utils', ['jquery', 'xwiki-meta'], function($, xm) {
+  var getAttachmentURL = function(attachment, action, queryString) {
+    var docRef = xm.documentReference;
+    if (typeof attachment !== 'string') {
+      docRef = attachment.parent;
+      attachment = attachment.name;
+    }
+    if (typeof queryString === 'object') {
+      queryString = $.param(queryString);
+    }
+    var attachmentURL = new XWiki.Document(docRef).getURL(action || 'download') +
+      (docRef.name == 'WebHome' ? docRef.name : '') + '/' + attachment +
+      (queryString ? '?' + queryString : '');
+    return attachmentURL;
+  };
+
+  return {
+    getAttachmentURL: getAttachmentURL
+  };
+});
+
+/**
+ * Utility functions used in both view and edit modes.
+ */
 define ('diagram-utils', ['jquery', 'mxgraph-common'], function($) {
   //
   // Get a XML diagram from hash.
@@ -196,10 +220,87 @@ define ('diagram-utils', ['jquery', 'mxgraph-common'], function($) {
     getParameterValueFromURL: getParameterValueFromURL,
     loadTranslationAndTheme: loadTranslationAndTheme
   };
+});
+
+/**
+ * Handles links to wiki pages (this is used by both the diagram viewer and the diagram editor).
+ */
+define('diagram-link-handler', ['xwiki-utils', 'draw.io.common'], function(xutils) {
+  // See https://about.draw.io/interactive-diagrams-with-custom-links-and-actions/
+  // See https://desk.draw.io/support/solutions/articles/16000080137
+  // See https://jgraph.github.io/drawio-tools/tools/link.html
+  var xwikiCustomLinkPrefix = 'data:xwiki/reference,';
+
+  var getResourceReferenceFromCustomLink = function(href) {
+    if (typeof href === 'string' &amp;&amp; href.substring(0, xwikiCustomLinkPrefix.length) === xwikiCustomLinkPrefix) {
+      var resourceReference = href.substring(xwikiCustomLinkPrefix.length);
+      var typeSeparatorIndex = resourceReference.indexOf(':');
+      if (typeSeparatorIndex &gt;= 0) {
+        return {
+          type: resourceReference.substring(0, typeSeparatorIndex),
+          reference: resourceReference.substring(typeSeparatorIndex + 1)
+        }
+      }
+    }
+    if (href) {
+      return {
+        type: 'url',
+        reference: href
+      };
+    }
+  };
+
+  var getCustomLinkFromResourceReference = function(resourceReference) {
+    if (resourceReference.type === 'url') {
+      return resourceReference.reference;
+    } else {
+      return xwikiCustomLinkPrefix + resourceReference.type + ':' + resourceReference.reference;
+    }
+  };
+
+  var originalHandleCustomLink = Graph.prototype.handleCustomLink;
+  Graph.prototype.handleCustomLink = function(href) {
+    let actualHref = href;
+    if (href.substring(0, xwikiCustomLinkPrefix.length) === xwikiCustomLinkPrefix) {
+      let resourceReference = getResourceReferenceFromCustomLink(href);
+      switch (resourceReference.type) {
+        case 'doc':
+          let documentReference = XWiki.Model.resolve(resourceReference.reference, XWiki.EntityType.DOCUMENT,
+            XWiki.currentDocument.documentReference);
+          actualHref = new XWiki.Document(documentReference).getURL();
+          break;
+        case 'attach':
+          let attachmentReference = XWiki.Model.resolve(resourceReference.reference, XWiki.EntityType.ATTACHMENT,
+            XWiki.currentDocument.documentReference);
+          actualHref = xutils.getAttachmentURL(attachmentReference);
+          break;
+        default:
+          actualHref = resourceReference.reference;
+          break;
+      }
+      actualHref = 'data:action/json,' + JSON.stringify({'actions': [{'open': actualHref}]});
+    }
+    return originalHandleCustomLink.call(this, actualHref);
+  };
+
+  var originalGetLinkTitle = EditorUi.prototype.getLinkTitle;
+  EditorUi.prototype.getLinkTitle = function(href) {
+    if (href.substring(0, xwikiCustomLinkPrefix.length) === xwikiCustomLinkPrefix) {
+      let resourceReference = getResourceReferenceFromCustomLink(href);
+      return resourceReference.type + ':' + resourceReference.reference;
+    } else {
+      return originalGetLinkTitle.apply(this, arguments);
+    }
+  };
+
+  return {
+    getResourceReferenceFromCustomLink: getResourceReferenceFromCustomLink,
+    getCustomLinkFromResourceReference: getCustomLinkFromResourceReference
+  };
 });</code>
     </property>
     <property>
-      <name>Diagram utils</name>
+      <name>Code used in both view and edit modes</name>
     </property>
     <property>
       <parse>0</parse>

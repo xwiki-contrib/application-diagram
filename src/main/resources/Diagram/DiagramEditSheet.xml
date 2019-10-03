@@ -242,7 +242,9 @@ require.config({
     'spin': diagramEditorBasePath + 'js/spin/spin.min',
     'jszip': diagramEditorBasePath + 'js/jszip/jszip.min',
     'draw.io': diagramEditorBasePath + 'js/draw.io$suffix',
+    'xwiki-utils': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify'),
     'diagram-utils': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify'),
+    'diagram-link-handler': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify'),
     'resourceSelector': new XWiki.Document('WebHome', 'Diagram.ResourceSelector').getURL('jsx', 'minify=$minify')
   },
   shim: {
@@ -253,6 +255,9 @@ require.config({
   map: {
     'diagram-utils': {
       'mxgraph-common': 'mxgraph-editor'
+    },
+    'diagram-link-handler': {
+      'draw.io.common': 'draw.io'
     }
   }
 })
@@ -360,30 +365,6 @@ define('spin-global', ['spin'], function(spin) {
     </property>
     <property>
       <code>/**
- * Generic helper methods.
- */
-define('xwiki-utils', ['jquery', 'xwiki-meta'], function($, xm) {
-  var getAttachmentURL = function(attachment, action, queryString) {
-    var docRef = xm.documentReference;
-    if (typeof attachment !== 'string') {
-      docRef = attachment.parent;
-      attachment = attachment.name;
-    }
-    if (typeof queryString === 'object') {
-      queryString = $.param(queryString);
-    }
-    var attachmentURL = new XWiki.Document(docRef).getURL(action || 'download') +
-      (docRef.name == 'WebHome' ? docRef.name : '') + '/' + attachment +
-      (queryString ? '?' + queryString : '');
-    return attachmentURL;
-  };
-
-  return {
-    getAttachmentURL: getAttachmentURL
-  };
-});
-
-/**
  * Adds support for editing diagrams stored in XWiki pages.
  */
 define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki-events-bridge'],
@@ -676,84 +657,17 @@ define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwik
       <code>/**
  * Overrides the link dialog in order to support creating links to wiki pages.
  */
-define('diagram-link', ['jquery', 'xwiki-utils', 'draw.io', 'resourceSelector'], function($, xutils) {
-  // See https://about.draw.io/interactive-diagrams-with-custom-links-and-actions/
-  // See https://desk.draw.io/support/solutions/articles/16000080137
-  // See https://jgraph.github.io/drawio-tools/tools/link.html
-  var xwikiCustomLinkPrefix = 'data:xwiki/reference,';
-
-  var getResourceReferenceFromCustomLink = function(href) {
-    if (typeof href === 'string' &amp;&amp; href.substring(0, xwikiCustomLinkPrefix.length) === xwikiCustomLinkPrefix) {
-      var resourceReference = href.substring(xwikiCustomLinkPrefix.length);
-      var typeSeparatorIndex = resourceReference.indexOf(':');
-      if (typeSeparatorIndex &gt;= 0) {
-        return {
-          type: resourceReference.substring(0, typeSeparatorIndex),
-          reference: resourceReference.substring(typeSeparatorIndex + 1)
-        }
-      }
-    }
-    if (href) {
-      return {
-        type: 'url',
-        reference: href
-      };
-    }
-  };
-
-  var getCustomLinkFromResourceReference = function(resourceReference) {
-    if (resourceReference.type === 'url') {
-      return resourceReference.reference;
-    } else {
-      return xwikiCustomLinkPrefix + resourceReference.type + ':' + resourceReference.reference;
-    }
-  };
-
+define('diagram-link-editor', ['jquery', 'diagram-link-handler', 'draw.io', 'resourceSelector'], function($, diagramLinkHandler) {
   EditorUi.prototype.showLinkDialog = function(value, selectLabel, callback) {
-    $('#diagramLinkModal').selectResource(getResourceReferenceFromCustomLink(value), {
+    $('#diagramLinkModal').selectResource(diagramLinkHandler.getResourceReferenceFromCustomLink(value), {
       selectLabel: selectLabel
     }).done(function(resourceReference) {
-      callback(getCustomLinkFromResourceReference(resourceReference));
+      callback(diagramLinkHandler.getCustomLinkFromResourceReference(resourceReference));
     });
-  };
-
-  var originalHandleCustomLink = EditorUi.prototype.handleCustomLink;
-  EditorUi.prototype.handleCustomLink = function(href) {
-    let actualHref = href;
-    if (href.substring(0, xwikiCustomLinkPrefix.length) === xwikiCustomLinkPrefix) {
-      let resourceReference = getResourceReferenceFromCustomLink(href);
-      switch (resourceReference.type) {
-        case 'doc':
-          let documentReference = XWiki.Model.resolve(resourceReference.reference, XWiki.EntityType.DOCUMENT,
-            XWiki.currentDocument.documentReference);
-          actualHref = new XWiki.Document(documentReference).getURL();
-          break;
-        case 'attach':
-          let attachmentReference = XWiki.Model.resolve(resourceReference.reference, XWiki.EntityType.ATTACHMENT,
-            XWiki.currentDocument.documentReference);
-          actualHref = xutils.getAttachmentURL(attachmentReference);
-          break;
-        default:
-          actualHref = resourceReference.reference;
-          break;
-      }
-      actualHref = 'data:action/json,' + JSON.stringify({'actions': [{'open': actualHref}]});
-    }
-    return originalHandleCustomLink.call(this, actualHref);
-  };
-
-  var originalGetLinkTitle = EditorUi.prototype.getLinkTitle;
-  EditorUi.prototype.getLinkTitle = function(href) {
-    if (href.substring(0, xwikiCustomLinkPrefix.length) === xwikiCustomLinkPrefix) {
-      let resourceReference = getResourceReferenceFromCustomLink(href);
-      return resourceReference.type + ':' + resourceReference.reference;
-    } else {
-      return originalGetLinkTitle.apply(this, arguments);
-    }
   };
 });
 
-define('diagram-editor', ['jquery', 'diagram-store', 'diagram-utils', 'xwiki-utils', 'diagram-link'], function($,
+define('diagram-editor', ['jquery', 'diagram-store', 'diagram-utils', 'xwiki-utils', 'diagram-link-editor'], function($,
   diagramStore, diagramUtils, xutils) {
 
   // These variables are used to decide if an image should be uploaded at original resolution or
