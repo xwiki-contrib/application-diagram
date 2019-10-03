@@ -153,7 +153,10 @@
   resourceSelector.on('xwiki:resourceSelector:select', function(event, resource) {
     var nodeId = getNodeIdForResource(resource);
     if (nodeId) {
-      tree.jstree(true).openTo(nodeId);
+      var jsTree = tree.jstree(true);
+      jsTree.deselect_all();
+      jsTree.close_all();
+      jsTree.openTo(nodeId);
     }
   });
 

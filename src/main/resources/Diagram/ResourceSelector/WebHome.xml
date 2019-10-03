@@ -207,10 +207,8 @@
           selectedResource.reference = entry.value;
         }
       }
-      if (selectedResource.type &amp;&amp; selectedResource.reference) {
-        deferred.resolve(selectedResource);
-        modal.modal('hide');
-      }
+      deferred.resolve(selectedResource);
+      modal.modal('hide');
     });
     if (typeof settings.selectLabel === 'string') {
       selectButton.text(settings.selectLabel);

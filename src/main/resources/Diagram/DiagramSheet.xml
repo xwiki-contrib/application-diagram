@@ -252,9 +252,12 @@ define('diagram-link-handler', ['xwiki-utils', 'draw.io.common'], function(xutil
 
   var getCustomLinkFromResourceReference = function(resourceReference) {
     if (resourceReference.type === 'url') {
-      return resourceReference.reference;
+      return resourceReference.reference || '';
+    } else if (resourceReference.type) {
+      return xwikiCustomLinkPrefix + resourceReference.type + ':' + (resourceReference.reference || '');
     } else {
-      return xwikiCustomLinkPrefix + resourceReference.type + ':' + resourceReference.reference;
+      // An empty link usually means that the link should be removed.
+      return '';
     }
   };
 
