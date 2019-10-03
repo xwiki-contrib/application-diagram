@@ -58,6 +58,14 @@
     #set ($diagramURL = $doc.getAttachmentURL($fileName, 'download', "v=$!doc.version"))
     ## Use the svg for export in case the attachment does not exists.
     #if (!$doc.getAttachment($fileName))
+      ## Update clipart links inside svg since they are saved as relative ones.
+      #set ($obj = $doc.getObject('Diagram.DiagramClass'))
+      #set ($svg = $obj.getValue('svg'))
+      #set ($regex = 'href="\/img')
+      #set ($newPrefix = 'href="' + "$services.webjars.url('org.xwiki.contrib:draw.io', '')" + '/img')
+      #set ($svg = $svg.replaceAll($regex, $newPrefix))
+      #set ($discard = $obj.set('svg', $svg))
+      #set ($discard = $doc.save())
       #set ($diagramURL = $doc.getURL('get', "data=svg&amp;v=$!doc.version"))
     #end
     {{html clean="false"}}
@@ -373,7 +381,7 @@ define('spin-global', ['spin'], function(spin) {
 
   $.fn.viewDiagram = function(configOverride) {
     return this.each(function() {
-      var diagramXML = diagramUtils.getDiagramXMLFromURL(window.location.href) || $(this).data('model');
+      var diagramXML = diagramUtils.addLibraryInfo(diagramUtils.getDiagramXMLFromURL(window.location.href) || $(this).data('model'));
       var diagramRootNode = mxUtils.parseXml(diagramXML).documentElement;
       var config = $.extend(getDiagramViewerConfig($(this)), configOverride);
       var graphViewer = new GraphViewer(this, diagramRootNode, config);
