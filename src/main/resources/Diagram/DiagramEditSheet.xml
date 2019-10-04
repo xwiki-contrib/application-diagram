@@ -684,10 +684,21 @@ define('diagram-editor', ['jquery', 'diagram-store', 'diagram-utils', 'xwiki-uti
     var editor = new Editor(/* chromeless: */ uiTheme === 'min', options.themes, /* model: */ null, /* graph: */ null,
       /* editable: */ true);
     var editorUI = new App(editor, options.container);
+    // Fix the editor UI before loading the diagram because layout changes can influence the way the shapes are drawn.
+    fixEditorUI(editorUI);
     var file = diagramStore.createFile(editorUI, options.input, options.fileName);
     // The first letter of the file name is used to determine the storage type. Let's use 'X' for XWiki storage.
     editorUI.loadFile('X' + options.fileName, true, file);
     return editorUI;
+  };
+
+  var fixEditorUI = function(editorUI) {
+    hideFooter(editorUI);
+    cleanMenu(editorUI);
+    fixKeyboardShortcutsAction(editorUI);
+    removeCompactModeToggle(editorUI);
+    fixFullScreenToggle(editorUI);
+    fixEditorButtons($(editorUI.container));
   };
 
   //
@@ -942,22 +953,16 @@ define('diagram-editor', ['jquery', 'diagram-store', 'diagram-utils', 'xwiki-uti
       // See issue #15: If you install XWebIDE Application you can't use "W" letter in the diagram text.
       event.stopPropagation();
     }).each(function() {
-      var editorUI = createDiagramEditor($.extend({
+      // We need this CSS class on the body element in order to have proper styling for the UI elements (menus, dialogs,
+      // tooltips) that are added directly under the body element.
+      $(document.body).addClass('geEditor');
+      createDiagramEditor($.extend({
         container: this,
         themes: themes,
         fileName: $('#document-title').text() || XWiki.currentPage,
         input: $(this).children('input.diagram-content')
       }, options));
       $(this).removeClass('loading');
-      // We need this CSS class on the body element in order to have proper styling for the UI elements (menus, dialogs,
-      // tooltips) that are added directly under the body element.
-      $(document.body).addClass('geEditor');
-      hideFooter(editorUI);
-      cleanMenu(editorUI);
-      fixKeyboardShortcutsAction(editorUI);
-      removeCompactModeToggle(editorUI);
-      fixFullScreenToggle(editorUI);
-      fixEditorButtons($(this));
     });
   };
 
