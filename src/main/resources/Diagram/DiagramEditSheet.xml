@@ -402,18 +402,6 @@ define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'diagram-utils',
     this.title = title;
   };
 
-  // Removes draw.io version from clipart paths for saving the relative links. This is needed as a fix for:
-  // https://github.com/xwikisas/application-diagram/issues/11
-  var removeLibraryInfo = function(graph) {
-    var gCells = graph.model.cells;
-    for (var key in gCells) {
-      var cell = gCells[key];
-      if(cell.style != undefined) {
-        graph.getModel().cells[key].style = cell.style.replace(/image=[\w=":./%';\=\+\-`]*\/img/g, 'image=/img');
-      }
-    }
-  }
-
   mxUtils.extend(XWikiFile, DrawioFile);
 
   $.extend(XWikiFile.prototype, {
@@ -431,8 +419,10 @@ define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'diagram-utils',
     },
     updateFileData: function() {
       // We overwrite the base implementation because we don't want to support files that contain multiple diagrams.
-      removeLibraryInfo(this.ui.editor.graph);
-      this.setData(mxUtils.getPrettyXml(this.ui.editor.getGraphXml()));
+      // Also, we remove draw.io version from clipart paths for saving the relative links. This is needed as a fix for:
+      // https://github.com/xwikisas/application-diagram/issues/11 .
+      var graphXML = mxUtils.getPrettyXml(this.ui.editor.getGraphXml());
+      this.setData(graphXML.replace(/image=[\w=":./%';\=\+\-`]*\/img/g, 'image=/img'));
     },
     open: function() {
       var graphXML = diagramUtils.addLibraryInfo(this.getData() || '&lt;mxGraphModel/&gt;');

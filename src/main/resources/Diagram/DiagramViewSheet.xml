@@ -43,10 +43,14 @@
 #if ($doc.getObject('Diagram.DiagramClass') || "$!request.source" != '')
   #if ($xcontext.action == 'get' &amp;&amp; $request.data == 'svg')
     #set ($svg = $doc.getValue('svg'))
+    #set ($regex = 'href="\/img')
+    #set ($newPrefix = 'href="' + "$services.webjars.url('org.xwiki.contrib:draw.io', '')" + '/img')
     #if ("$!svg" == '')
       #set ($svg = '&lt;svg/&gt;')
     #end
     #set ($discard = $response.setContentType('image/svg+xml'))
+    ## Update clipart links inside svg since they are saved as relative ones.
+    #set ($svg = $svg.replaceAll($regex, $newPrefix))
     #set ($discard = $response.setContentLength($svg.length()))
     #set ($discard = $response.writer.write($svg))
   #elseif ($xcontext.action == 'export' || $request.xpage == 'print')
@@ -58,14 +62,6 @@
     #set ($diagramURL = $doc.getAttachmentURL($fileName, 'download', "v=$!doc.version"))
     ## Use the svg for export in case the attachment does not exists.
     #if (!$doc.getAttachment($fileName))
-      ## Update clipart links inside svg since they are saved as relative ones.
-      #set ($obj = $doc.getObject('Diagram.DiagramClass'))
-      #set ($svg = $obj.getValue('svg'))
-      #set ($regex = 'href="\/img')
-      #set ($newPrefix = 'href="' + "$services.webjars.url('org.xwiki.contrib:draw.io', '')" + '/img')
-      #set ($svg = $svg.replaceAll($regex, $newPrefix))
-      #set ($discard = $obj.set('svg', $svg))
-      #set ($discard = $doc.save())
       #set ($diagramURL = $doc.getURL('get', "data=svg&amp;v=$!doc.version"))
     #end
     {{html clean="false"}}
