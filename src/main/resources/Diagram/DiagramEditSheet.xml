@@ -422,7 +422,7 @@ define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'diagram-utils',
       // Also, we remove draw.io version from clipart paths for saving the relative links. This is needed as a fix for:
       // https://github.com/xwikisas/application-diagram/issues/11 .
       var graphXML = mxUtils.getPrettyXml(this.ui.editor.getGraphXml());
-      this.setData(graphXML.replace(/image=[\w=":./%';\=\+\-`]*\/img/g, 'image=/img'));
+      this.setData(graphXML.replace(/image=[\w/%.]*\/img/g, 'image=/img'));
     },
     open: function() {
       var graphXML = diagramUtils.addLibraryInfo(this.getData() || '&lt;mxGraphModel/&gt;');
@@ -551,7 +551,7 @@ define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'diagram-utils',
       if (svgInput.length &gt; 0) {
         var svgRoot = file.getUi().editor.graph.getSvg('#ffffff', true, false, false, null, true);
         // Have relative clipart paths inside the cached svg for not saving draw.io version as well.
-        svgInput.val(mxUtils.getXml(svgRoot).replace(/href=[\w=":./%';\=\+\-`]*\/img/g, 'href="/img'));
+        svgInput.val(mxUtils.getXml(svgRoot).replace(/href="[\w:/%.]*\/img/g, 'href="/img'));
       }
     });
   });

@@ -197,7 +197,7 @@ define ('diagram-utils', ['jquery', 'mxgraph-common'], function($) {
     var newPrefix = 'image=' + "$services.webjars.url('org.xwiki.contrib:draw.io', '')" + '/img';
     diagramXML = diagramXML.replace(/image=\/img/g, newPrefix);
     return diagramXML;
-  }
+  };
 
   return {
     getDiagramXMLFromURL: getDiagramXMLFromURL,
