@@ -367,8 +367,8 @@ define('spin-global', ['spin'], function(spin) {
       <code>/**
  * Adds support for editing diagrams stored in XWiki pages.
  */
-define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwiki-events-bridge'],
-    function($, xm, xutils) {
+define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'diagram-utils', 'draw.io', 'xwiki-events-bridge'],
+    function($, xm, xutils, diagramUtils) {
   var files = [];
   window._xfiles = files;
   var createFile = function(ui, input, title) {
@@ -400,10 +400,13 @@ define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwik
     },
     updateFileData: function() {
       // We overwrite the base implementation because we don't want to support files that contain multiple diagrams.
-      this.setData(mxUtils.getPrettyXml(this.ui.editor.getGraphXml()));
+      // Also, we remove draw.io version from clipart paths for saving the relative links. This is needed as a fix for:
+      // https://github.com/xwikisas/application-diagram/issues/11 .
+      var graphXML = mxUtils.getPrettyXml(this.ui.editor.getGraphXml());
+      this.setData(graphXML.replace(/image=[\w/%.]*\/img/g, 'image=/img'));
     },
     open: function() {
-      var graphXML = this.getData() || '&lt;mxGraphModel/&gt;';
+      var graphXML = diagramUtils.addLibraryInfo(this.getData() || '&lt;mxGraphModel/&gt;');
       this.ui.editor.setGraphXml(mxUtils.parseXml(graphXML).documentElement);
       this.changeListener = mxUtils.bind(this, function(sender, eventObject) {
         this.setModified(true);
@@ -528,7 +531,8 @@ define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'draw.io', 'xwik
       var svgInput = file.input.next('.diagram-svg');
       if (svgInput.length &gt; 0) {
         var svgRoot = file.getUi().editor.graph.getSvg('#ffffff', true, false, false, null, true);
-        svgInput.val(mxUtils.getXml(svgRoot));
+        // Have relative clipart paths inside the cached svg for not saving draw.io version as well.
+        svgInput.val(mxUtils.getXml(svgRoot).replace(/href="[\w:/%.]*\/img/g, 'href="/img'));
       }
     });
   });

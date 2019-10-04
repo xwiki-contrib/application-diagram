@@ -43,10 +43,14 @@
 #if ($doc.getObject('Diagram.DiagramClass') || "$!request.source" != '')
   #if ($xcontext.action == 'get' &amp;&amp; $request.data == 'svg')
     #set ($svg = $doc.getValue('svg'))
+    #set ($regex = 'href="\/img')
+    #set ($newPrefix = 'href="' + "$services.webjars.url('org.xwiki.contrib:draw.io', '')" + '/img')
     #if ("$!svg" == '')
       #set ($svg = '&lt;svg/&gt;')
     #end
     #set ($discard = $response.setContentType('image/svg+xml'))
+    ## Update clipart links inside svg since they are saved as relative ones.
+    #set ($svg = $svg.replaceAll($regex, $newPrefix))
     #set ($discard = $response.setContentLength($svg.length()))
     #set ($discard = $response.writer.write($svg))
   #elseif ($xcontext.action == 'export' || $request.xpage == 'print')
@@ -378,7 +382,7 @@ define('spin-global', ['spin'], function(spin) {
 
   $.fn.viewDiagram = function(configOverride) {
     return this.each(function() {
-      var diagramXML = diagramUtils.getDiagramXMLFromURL(window.location.href) || $(this).data('model');
+      var diagramXML = diagramUtils.addLibraryInfo(diagramUtils.getDiagramXMLFromURL(window.location.href) || $(this).data('model'));
       var diagramRootNode = mxUtils.parseXml(diagramXML).documentElement;
       var config = $.extend(getDiagramViewerConfig($(this)), configOverride);
       var graphViewer = new GraphViewer(this, diagramRootNode, config);

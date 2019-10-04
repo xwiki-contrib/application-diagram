@@ -215,10 +215,19 @@ define ('diagram-utils', ['jquery', 'mxgraph-common'], function($) {
     return deferred.promise();
   };
 
+  // Adds draw.io version into clipart paths when editing or viewing a diagram, since the saved links are relative.
+  // This is needed as a fix for: https://github.com/xwikisas/application-diagram/issues/11
+  var addLibraryInfo = function(diagramXML) {
+    var newPrefix = 'image=' + "$services.webjars.url('org.xwiki.contrib:draw.io', '')" + '/img';
+    diagramXML = diagramXML.replace(/image=\/img/g, newPrefix);
+    return diagramXML;
+  };
+
   return {
     getDiagramXMLFromURL: getDiagramXMLFromURL,
     getParameterValueFromURL: getParameterValueFromURL,
-    loadTranslationAndTheme: loadTranslationAndTheme
+    loadTranslationAndTheme: loadTranslationAndTheme,
+    addLibraryInfo: addLibraryInfo
   };
 });
 
@@ -306,7 +315,7 @@ define('diagram-link-handler', ['xwiki-utils', 'draw.io.common'], function(xutil
       <name>Code used in both view and edit modes</name>
     </property>
     <property>
-      <parse>0</parse>
+      <parse>1</parse>
     </property>
     <property>
       <use>onDemand</use>
