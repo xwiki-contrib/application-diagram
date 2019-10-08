@@ -510,6 +510,18 @@ define('diagram-link-handler', ['xwiki-utils', 'draw.io.common'], function(xutil
   vertical-align: baseline;
 }
 
+.geDialog h3 {
+  font-size: 1.17em;
+  font-weight: bold;
+}
+
+.geDialog input[type='checkbox'] {
+  vertical-align: baseline;
+}
+
+.geDialog label {
+  display: inline;
+}
 /**
  * Diagram Viewer
  */
