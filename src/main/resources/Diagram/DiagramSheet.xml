@@ -522,6 +522,10 @@ define('diagram-link-handler', ['xwiki-utils', 'draw.io.common'], function(xutil
 .geDialog label {
   display: inline;
 }
+
+.geDialog textarea {
+  padding: inherit;
+}
 /**
  * Diagram Viewer
  */
