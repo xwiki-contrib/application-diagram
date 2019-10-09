@@ -250,7 +250,7 @@ require.config({
   shim: {
     'mxgraph-client': ['mxgraph-init'],
     'mxgraph-editor': ['mxgraph-client', 'jscolor', 'sanitizer'],
-    'draw.io': ['mxgraph-editor', 'base64', 'pako-global', 'spin-global', 'jszip']
+    'draw.io': ['mxgraph-editor', 'base64', 'pako-global', 'spin-global', 'jszip-global']
   },
   map: {
     'diagram-utils': {
@@ -270,6 +270,11 @@ define('pako-global', ['pako'], function(pako) {
 define('spin-global', ['spin'], function(spin) {
   // draw.io expects a global variable.
   window.Spinner = spin;
+});
+
+define('jszip-global', ['jszip'], function(JSZip) {
+  // draw.io expects a global variable.
+  window.JSZip = JSZip;
 });</code>
     </property>
     <property>
