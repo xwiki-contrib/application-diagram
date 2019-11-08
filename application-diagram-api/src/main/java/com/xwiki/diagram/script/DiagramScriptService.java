@@ -41,7 +41,7 @@ import org.xwiki.stability.Unstable;
 import com.xwiki.diagram.DiagramConfiguration;
 import com.xwiki.diagram.internal.DiagramExportRequest;
 import com.xwiki.diagram.internal.DiagramExportRequestFactory;
-import com.xwiki.diagram.internal.DiagramExporter;
+import com.xwiki.diagram.internal.HTTPDiagramExporter;
 
 /**
  * Script services for the Diagram application.
@@ -62,7 +62,7 @@ public class DiagramScriptService implements ScriptService
     private DiagramConfiguration configuration;
 
     @Inject
-    private DiagramExporter diagramExporter;
+    private HTTPDiagramExporter diagramExporter;
 
     @Inject
     private DiagramExportRequestFactory diagramExportRequestFactory;

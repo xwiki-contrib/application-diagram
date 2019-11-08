@@ -23,24 +23,24 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.StringReader;
+import java.util.function.BiFunction;
 
 import javax.imageio.ImageIO;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.xml.sax.InputSource;
+import org.slf4j.Logger;
 import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
 import org.xwiki.component.annotation.Component;
-import org.xwiki.xml.XMLReaderFactory;
 
-import com.mxgraph.canvas.mxGraphicsCanvas2D;
-import com.mxgraph.canvas.mxICanvas2D;
-import com.mxgraph.reader.mxSaxOutputHandler;
+import com.mxgraph.canvas.mxGraphics2DCanvas;
+import com.mxgraph.canvas.mxICanvas;
+import com.mxgraph.util.mxCellRenderer;
+import com.mxgraph.util.mxCellRenderer.CanvasFactory;
+import com.mxgraph.util.mxRectangle;
 import com.mxgraph.util.mxUtils;
+import com.mxgraph.view.mxGraph;
 import com.mxpdf.text.Document;
 import com.mxpdf.text.DocumentException;
 import com.mxpdf.text.PageSize;
@@ -58,108 +58,93 @@ import com.mxpdf.text.pdf.PdfWriter;
 public class DiagramExporter
 {
     @Inject
-    private DiagramCanvasFactory canvasFactory;
+    private Logger logger;
 
     @Inject
-    private XMLReaderFactory xmlReaderFactory;
+    private DiagramXMLParser xmlParser;
 
     /**
      * Exports a diagram.
      * 
      * @param request the diagram export request
-     * @param response the response to write the output to
+     * @param outputStream where to write the output to
      * @throws IOException if it fails to write the output to the response
      * @throws ParserConfigurationException if it fails to create an XML reader
      * @throws SAXException if it fails to parse the diagram XML
      * @throws DocumentException if it fails to generate the PDF
      */
-    public void export(DiagramExportRequest request, HttpServletResponse response)
+    public void export(DiagramExportRequest request, OutputStream outputStream)
         throws IOException, DocumentException, SAXException, ParserConfigurationException
     {
-        try (OutputStream out = response.getOutputStream()) {
-            if (DiagramExportRequest.FORMAT_PDF.equals(request.format)) {
-                exportAsPDF(request, response);
-            } else {
-                exportAsImage(request, response);
-            }
-            response.setStatus(HttpServletResponse.SC_OK);
+        if (DiagramExportRequest.FORMAT_PDF.equals(request.format)) {
+            exportAsPDF(request, outputStream);
+        } else {
+            exportAsImage(request, outputStream);
         }
     }
 
-    private void exportAsImage(DiagramExportRequest request, HttpServletResponse response)
+    protected void exportAsImage(DiagramExportRequest request, OutputStream outputStream)
         throws IOException, SAXException, ParserConfigurationException
     {
         BufferedImage image = mxUtils.createBufferedImage(request.width, request.height, request.backgroundColor);
-
-        if (image != null) {
+        drawToCanvas(request, (width, height) -> {
             Graphics2D graphics2D = image.createGraphics();
             mxUtils.setAntiAlias(graphics2D, true, true);
-            renderXML(request.xml, this.canvasFactory.createCanvas(graphics2D));
+            return graphics2D;
+        });
 
-            if (request.outputFileName != null) {
-                response.setContentType("application/x-unknown");
-                setContentDisposition(response, request.outputFileName);
-            } else if (request.format != null) {
-                response.setContentType("image/" + request.format.toLowerCase());
-            }
-
-            ImageIO.write(image, request.format, response.getOutputStream());
-        }
+        ImageIO.write(image, request.format, outputStream);
     }
 
-    private void exportAsPDF(DiagramExportRequest request, HttpServletResponse response)
+    protected void exportAsPDF(DiagramExportRequest request, OutputStream outputStream)
         throws DocumentException, IOException, SAXException, ParserConfigurationException
     {
-        response.setContentType("application/pdf");
-
-        if (request.outputFileName != null) {
-            setContentDisposition(response, request.outputFileName);
-        }
-
         Rectangle pageSize = PageSize.A4;
         if (request.width != null && request.height != null) {
-            // The added pixel fixes the PDF offset.
-            pageSize = new Rectangle(request.width + 1, request.height + 1);
+            pageSize = new Rectangle(request.width, request.height);
         }
 
         Document document = new Document(pageSize);
-        PdfWriter writer = PdfWriter.getInstance(document, response.getOutputStream());
+        final PdfWriter writer = PdfWriter.getInstance(document, outputStream);
         document.open();
 
-        mxGraphicsCanvas2D canvas = this.canvasFactory
-            .createCanvas(writer.getDirectContent().createGraphics(pageSize.getWidth(), pageSize.getHeight()));
+        drawToCanvas(request, writer.getDirectContent()::createGraphics);
 
-        // Fixes PDF offset.
-        canvas.translate(1, 1);
-
-        renderXML(request.xml, canvas);
-        canvas.getGraphics().dispose();
         document.close();
-        writer.flush();
-        writer.close();
     }
 
-    private void setContentDisposition(HttpServletResponse response, String fileName)
+    private void drawToCanvas(DiagramExportRequest request, BiFunction<Integer, Integer, Graphics2D> graphicsFactory)
     {
-        response.setHeader("Content-Disposition",
-            "attachment; filename=\"" + fileName + "\"; filename*=UTF-8''" + fileName);
+        mxGraph graph = this.xmlParser.parse(request.xml);
+        if (graph == null) {
+            this.logger.warn("The specified diagram is not valid and thus it can't be drawn.");
+            return;
+        }
+        configureGraph(graph, request);
+
+        mxRectangle clip = null;
+        if (request.width != null && request.height != null) {
+            clip = new mxRectangle(0, 0, request.width, request.height);
+        }
+        mxGraphics2DCanvas canvas =
+            (mxGraphics2DCanvas) mxCellRenderer.drawCells(graph, null, request.scale, clip, new CanvasFactory()
+            {
+                public mxICanvas createCanvas(int width, int height)
+                {
+                    return new mxGraphics2DCanvas(graphicsFactory.apply(width, height));
+                }
+            });
+        if (canvas != null) {
+            canvas.getGraphics().dispose();
+        }
     }
 
-    /**
-     * Renders the given XML to the given canvas.
-     * 
-     * @param xml the XML to render
-     * @param canvas the canvas where to render the XML
-     */
-    private void renderXML(String xml, mxICanvas2D canvas)
-        throws SAXException, ParserConfigurationException, IOException
+    private void configureGraph(mxGraph graph, DiagramExportRequest request)
     {
-        XMLReader reader = this.xmlReaderFactory.createXMLReader();
-        reader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-        reader.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-        reader.setFeature("http://xml.org/sax/features/external-general-entities", false);
-        reader.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-        reader.setContentHandler(new mxSaxOutputHandler(canvas));
-        reader.parse(new InputSource(new StringReader(xml)));
+        if (request.borderWidth != null) {
+            graph.setBorder(request.borderWidth);
+        }
+        graph.setEnabled(false);
+        graph.setHtmlLabels(true);
     }
 }

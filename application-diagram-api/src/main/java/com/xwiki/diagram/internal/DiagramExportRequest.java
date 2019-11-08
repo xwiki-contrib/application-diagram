@@ -29,6 +29,7 @@ import org.xwiki.model.reference.DocumentReference;
  * 
  * @version $Id$
  * @since 1.11
+ * @see https://github.com/jgraph/draw-image-export2#common-parameters
  */
 public class DiagramExportRequest
 {
@@ -83,7 +84,7 @@ public class DiagramExportRequest
     /**
      * The scale to apply to the exported diagram.
      */
-    public Float scale;
+    public Double scale = 1D;
 
     /**
      * The width of the border to draw around the exported diagram.

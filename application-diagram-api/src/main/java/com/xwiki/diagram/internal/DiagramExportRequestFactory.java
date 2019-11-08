@@ -148,7 +148,7 @@ public class DiagramExportRequestFactory
     {
         String value = request.getParameter("scale");
         if (value != null) {
-            diagramExportRequest.scale = Float.parseFloat(value);
+            diagramExportRequest.scale = Double.parseDouble(value);
             if (diagramExportRequest.scale <= 0) {
                 throw new IllegalArgumentException("Invalid export scale.");
             }
