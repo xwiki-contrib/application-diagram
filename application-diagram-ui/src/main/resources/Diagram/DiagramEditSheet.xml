@@ -447,41 +447,16 @@ define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'diagram-utils',
     left.done($.proxy(right, 'resolve')).fail($.proxy(right, 'reject'));
   };
 
-  var uploadFile = function(blob, fileName) {
-    var doc = new XWiki.Document(xm.documentReference);
-    var url = doc.getURL('upload');
-    var formData = new FormData();
-    formData.append('filepath', blob);
-    formData.append('filename', fileName);
-    formData.append('form_token', xm.form_token);
-    // The default redirect adds more time for the upload and we don't need to render those pages.
-    formData.append('xredirect', doc.getURL('get', 'outputSyntax=plain'));
-    return $.post({
-      url : url,
-      data : formData,
-      processData : false,
-      contentType : false
-    });
-  };
-
-  var deleteFile = function(fileName) {
-    var attachmentURL = xutils.getAttachmentURL(fileName, 'delattachment', {
-      'form_token': xm.form_token,
-      'xredirect': XWiki.currentDocument.getURL('get', 'outputSyntax=plain')
-    });
-    return $.post(attachmentURL);
-  };
-
   var saveCanvasAsAttachment = function(canvas) {
     var deferred = $.Deferred();
     var docRef = xm.documentReference;
-    var fileName = (docRef.name == 'WebHome' ? docRef.parent.name : docRef.name) + '.thumbnail.png';
+    var attachmentName = (docRef.name == 'WebHome' ? docRef.parent.name : docRef.name) + '.thumbnail.png';
     // Keep only the last version of the attachment. Since 'toBlob' is not supported by IE the attachment won't be
     // saved in this browser, falling back to the use of svg for pdf export.
-    deleteFile(fileName).always(function() {
+    xutils.deleteAttachment(attachmentName).always(function() {
       try {
         canvas.toBlob(function(blob) {
-          pipeDeferred(uploadFile(blob, fileName), deferred);
+          pipeDeferred(xutils.uploadAttachment(blob, attachmentName), deferred);
         });
       } catch(err) {
         console.log(err);
@@ -566,8 +541,7 @@ define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'diagram-utils',
   });
 
   return {
-    createFile: createFile,
-    uploadFile: uploadFile
+    createFile: createFile
   };
 });</code>
     </property>
@@ -819,7 +793,7 @@ define('diagram-editor', ['jquery', 'diagram-store', 'diagram-utils', 'xwiki-uti
       newArgs[4] = function(data, mimeType, x, y, w, h) {
         if (data.substring(0, 5) == 'data:') {
           let currentFile = files[0];
-          diagramStore.uploadFile(currentFile, currentFile.name).done(function() {
+          xutils.uploadAttachment(currentFile, currentFile.name).done(function() {
             let doc = XWiki.currentDocument;
             let xwikiURL = xutils.getAttachmentURL(currentFile.name);
             fn.apply(this, [xwikiURL, mimeType, x, y, w, h]);
