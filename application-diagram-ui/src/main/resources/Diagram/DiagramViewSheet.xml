@@ -204,7 +204,8 @@ require.config({
     'draw.io.viewer': diagramViewerBasePath + 'js/draw.io.viewer$suffix',
     'xwiki-utils': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify'),
     'diagram-utils': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify'),
-    'diagram-link-handler': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify')
+    'diagram-link-handler': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify'),
+    'diagram-graph-xml-filter': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify')
   },
   shim: {
     'mxgraph-client': ['mxgraph-init'],
@@ -323,7 +324,13 @@ define('spin-global', ['spin'], function(spin) {
       <cache>long</cache>
     </property>
     <property>
-      <code>define('diagram-viewer', ['jquery', 'diagram-utils', 'diagram-link-handler', 'draw.io.viewer'], function($, diagramUtils) {
+      <code>define('diagram-viewer', [
+  'jquery',
+  'diagram-utils',
+  'diagram-link-handler',
+  'diagram-graph-xml-filter',
+  'draw.io.viewer'
+], function($, diagramUtils) {
   var getOrigin = function() {
     var origin = window.location.origin;
     if (!origin) {
@@ -382,8 +389,14 @@ define('spin-global', ['spin'], function(spin) {
 
   $.fn.viewDiagram = function(configOverride) {
     return this.each(function() {
-      var diagramXML = diagramUtils.addLibraryInfo(diagramUtils.getDiagramXMLFromURL(window.location.href) || $(this).data('model'));
+      var fromStorage = false;
+      var diagramXML = diagramUtils.getDiagramXMLFromURL(window.location.href);
+      if (!diagramXML) {
+        diagramXML = $(this).data('model');
+        fromStorage = true;
+      }
       var diagramRootNode = mxUtils.parseXml(diagramXML).documentElement;
+      diagramRootNode.fromStorage = fromStorage;
       var config = $.extend(getDiagramViewerConfig($(this)), configOverride);
       var graphViewer = new GraphViewer(this, diagramRootNode, config);
       // Make the diagram title from the tool bar a link to the diagram page.

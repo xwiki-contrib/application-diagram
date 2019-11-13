@@ -184,7 +184,7 @@ define('xwiki-utils', ['jquery', 'xwiki-meta'], function($, xm) {
 /**
  * Utility functions used in both view and edit modes.
  */
-define ('diagram-utils', ['jquery', 'mxgraph-common'], function($) {
+define('diagram-utils', ['jquery', 'mxgraph-common'], function($) {
   //
   // Get a XML diagram from hash.
   // The hash begins with 'R' &amp; continues with the encoded diagram.
@@ -200,26 +200,10 @@ define ('diagram-utils', ['jquery', 'mxgraph-common'], function($) {
         let rawDiagram = graph.decompress(decodedData);
         return rawDiagram;
       } catch (e) {
-        console.error (e.stack)
+        console.error(e.stack)
       }
     }
     return null;
-  };
-
-  var urlParam = function(parameter, url) {
-    var results = new RegExp('[\?&amp;]' + parameter + '=([^&amp;#]*)').exec(url);
-    if (results === null) {
-       return null;
-    }
-    return decodeURIComponent(results[1]);
-  };
-
-  var getParameterValueFromURL = function(parameter, url) {
-    if (typeof URLSearchParams === 'function') {
-      return new URL(url, window.location.href).searchParams.get(parameter);
-    }
-    // IE will get here since it's not supporting URLSearchParams.
-    return urlParam(parameter, url);
   };
 
   //
@@ -242,19 +226,9 @@ define ('diagram-utils', ['jquery', 'mxgraph-common'], function($) {
     return deferred.promise();
   };
 
-  // Adds draw.io version into clipart paths when editing or viewing a diagram, since the saved links are relative.
-  // This is needed as a fix for: https://github.com/xwikisas/application-diagram/issues/11
-  var addLibraryInfo = function(diagramXML) {
-    var newPrefix = 'image=' + "$services.webjars.url('org.xwiki.contrib:draw.io', '')" + '/img';
-    diagramXML = diagramXML.replace(/image=\/img/g, newPrefix);
-    return diagramXML;
-  };
-
   return {
     getDiagramXMLFromURL: getDiagramXMLFromURL,
-    getParameterValueFromURL: getParameterValueFromURL,
-    loadTranslationAndTheme: loadTranslationAndTheme,
-    addLibraryInfo: addLibraryInfo
+    loadTranslationAndTheme: loadTranslationAndTheme
   };
 });
 
@@ -266,9 +240,12 @@ define('diagram-link-handler', ['xwiki-utils', 'draw.io.common'], function(xutil
   // See https://desk.draw.io/support/solutions/articles/16000080137
   // See https://jgraph.github.io/drawio-tools/tools/link.html
   var xwikiCustomLinkPrefix = 'data:xwiki/reference,';
+  var isXWikiCustomLink = function(href) {
+    return typeof href === 'string' &amp;&amp; href.substring(0, xwikiCustomLinkPrefix.length) === xwikiCustomLinkPrefix;
+  };
 
   var getResourceReferenceFromCustomLink = function(href) {
-    if (typeof href === 'string' &amp;&amp; href.substring(0, xwikiCustomLinkPrefix.length) === xwikiCustomLinkPrefix) {
+    if (isXWikiCustomLink(href)) {
       var resourceReference = href.substring(xwikiCustomLinkPrefix.length);
       var typeSeparatorIndex = resourceReference.indexOf(':');
       if (typeSeparatorIndex &gt;= 0) {
@@ -297,34 +274,38 @@ define('diagram-link-handler', ['xwiki-utils', 'draw.io.common'], function(xutil
     }
   };
 
+  var getURLFromResourceReference = function(resourceReference) {
+    switch (resourceReference.type) {
+      case 'doc':
+        let documentReference = XWiki.Model.resolve(resourceReference.reference, XWiki.EntityType.DOCUMENT,
+          XWiki.currentDocument.documentReference);
+        return new XWiki.Document(documentReference).getURL();
+      case 'attach':
+        let attachmentReference = XWiki.Model.resolve(resourceReference.reference, XWiki.EntityType.ATTACHMENT,
+          XWiki.currentDocument.documentReference);
+        return xutils.getAttachmentURL(attachmentReference);
+      default:
+        return resourceReference.reference;
+    }
+  };
+
+  var getURLFromCustomLink = function(href) {
+    let resourceReference = getResourceReferenceFromCustomLink(href);
+    return getURLFromResourceReference(resourceReference);
+  };
+
   var originalHandleCustomLink = Graph.prototype.handleCustomLink;
   Graph.prototype.handleCustomLink = function(href) {
     let actualHref = href;
-    if (href.substring(0, xwikiCustomLinkPrefix.length) === xwikiCustomLinkPrefix) {
-      let resourceReference = getResourceReferenceFromCustomLink(href);
-      switch (resourceReference.type) {
-        case 'doc':
-          let documentReference = XWiki.Model.resolve(resourceReference.reference, XWiki.EntityType.DOCUMENT,
-            XWiki.currentDocument.documentReference);
-          actualHref = new XWiki.Document(documentReference).getURL();
-          break;
-        case 'attach':
-          let attachmentReference = XWiki.Model.resolve(resourceReference.reference, XWiki.EntityType.ATTACHMENT,
-            XWiki.currentDocument.documentReference);
-          actualHref = xutils.getAttachmentURL(attachmentReference);
-          break;
-        default:
-          actualHref = resourceReference.reference;
-          break;
-      }
-      actualHref = 'data:action/json,' + JSON.stringify({'actions': [{'open': actualHref}]});
+    if (isXWikiCustomLink(href)) {
+      actualHref = 'data:action/json,' + JSON.stringify({'actions': [{'open': getURLFromCustomLink(href)}]});
     }
     return originalHandleCustomLink.call(this, actualHref);
   };
 
   var originalGetLinkTitle = EditorUi.prototype.getLinkTitle;
   EditorUi.prototype.getLinkTitle = function(href) {
-    if (href.substring(0, xwikiCustomLinkPrefix.length) === xwikiCustomLinkPrefix) {
+    if (isXWikiCustomLink(href)) {
       let resourceReference = getResourceReferenceFromCustomLink(href);
       return resourceReference.type + ':' + resourceReference.reference;
     } else {
@@ -333,8 +314,248 @@ define('diagram-link-handler', ['xwiki-utils', 'draw.io.common'], function(xutil
   };
 
   return {
+    isXWikiCustomLink: isXWikiCustomLink,
     getResourceReferenceFromCustomLink: getResourceReferenceFromCustomLink,
-    getCustomLinkFromResourceReference: getCustomLinkFromResourceReference
+    getCustomLinkFromResourceReference: getCustomLinkFromResourceReference,
+    getURLFromCustomLink: getURLFromCustomLink,
+    getURLFromResourceReference: getURLFromResourceReference
+  };
+});
+
+/**
+ * Filters the Graph XML when:
+ * &lt;ul&gt;
+ *   &lt;li&gt;
+ *     the XML is &lt;b&gt;loaded&lt;/b&gt; from the XWiki database
+ *     &lt;ul&gt;
+ *       &lt;li&gt;convert the draw.io WAR paths to draw.io WebJar paths (e.g. include the draw.io version)&lt;/li&gt;
+ *       &lt;li&gt;replace the attachment reference from the image source with the attachment URL&lt;/li&gt;
+ *     &lt;/ul&gt;
+ *   &lt;/li&gt;
+ *   &lt;li&gt;
+ *     the XML is &lt;b&gt;saved&lt;/b&gt; to the XWiki database
+ *     &lt;ul&gt;
+ *       &lt;li&gt;convert the draw.io WebJar paths to draw.io WAR paths (e.g. remove the draw.io version)&lt;/li&gt;
+ *       &lt;li&gt;internal links should be saved using the entity reference instead of the entity URL&lt;/li&gt;
+ *       &lt;li&gt;internal images should be saved using the attachment reference instead of the attachment URL&lt;/li&gt;
+ *     &lt;/ul&gt;
+ *   &lt;/li&gt;
+ *   &lt;li&gt;
+ *     the XML is &lt;b&gt;imported&lt;/b&gt; from an external source
+ *     &lt;ul&gt;
+ *       &lt;li&gt;convert the draw.io WAR paths to draw.io WebJar paths (e.g. include the draw.io version)&lt;/li&gt;
+ *       &lt;li&gt;replace absolute URLs with internal custom links, if the target entity reference is indicated&lt;/li&gt;
+ *     &lt;/ul&gt;
+ *   &lt;/li&gt;
+ *   &lt;li&gt;
+ *     the XML is &lt;b&gt;exported&lt;/b&gt; to an external source
+ *     &lt;ul&gt;
+ *       &lt;li&gt;convert the draw.io WebJar paths to draw.io WAR paths (e.g. remove the draw.io version)&lt;/li&gt;
+ *       &lt;li&gt;convert attached images to data URI (but keep some metadata to idicate the attachment reference)&lt;/li&gt;
+ *       &lt;li&gt;replace custom internal links with absolute URLs (but keep some metadata to indicate the entity reference)&lt;/li&gt;
+ *     &lt;/ul&gt;
+ *   &lt;/li&gt;
+ * &lt;/ul&gt;
+ */
+define('diagram-graph-xml-filter', ['jquery', 'diagram-link-handler'], function($, diagramLinkHandler) {
+  var originalGetGraphXml = Editor.prototype.getGraphXml;
+  Editor.prototype.getGraphXml = function(ignoreSelection, forStorage) {
+    var node = originalGetGraphXml.apply(this, arguments);
+    var filterImage = forStorage === true ? onSaveImage : onExportImage;
+    var filterLink = forStorage === true ? onSaveLink : onExportLink;
+    filter(this.graph, node, filterImage, filterLink);
+    return node;
+  };
+
+  var originalSetGraphXml = Editor.prototype.setGraphXml;
+  Editor.prototype.setGraphXml = function(node) {
+    var filterImage = node.fromStorage === true ? onLoadImage : onImportImage;
+    var filterLink = node.fromStorage === true ? onLoadLink : onImportLink;
+    filter(this.graph, node, filterImage, filterLink);
+    originalSetGraphXml.call(this, node);
+  };
+
+  var originalImportGraphModel = Graph.prototype.importGraphModel;
+  Graph.prototype.importGraphModel = function(node, dx, dy, crop) {
+    filter(this, node, onImportImage, onImportLink);
+    originalImportGraphModel.call(this, node, dx, dy, crop);
+  };
+
+  var filter = function(graph, node, filterImage, filterLink) {
+    findImageNodes(node).each(function() {
+      filterImage(this, graph);
+    });
+    findLinkNodes(node).each(function() {
+      filterLink(this, graph);
+    });
+  };
+
+  var findImageNodes = function(node) {
+    return $(node).find('mxCell[style^="image;"], mxCell[style^="shape=image;"]');
+  };
+
+  var findLinkNodes = function(node) {
+    return $(node).find('UserObject[link]');
+  };
+
+  var drawIOWebJarPathPrefix = $jsontool.serialize($services.webjars.url('org.xwiki.contrib:draw.io', ''));
+
+  // Convert the draw.io WebJar paths to draw.io WAR paths (e.g. remove the draw.io version from the path).
+  // Internal images should be saved using the attachment reference instead of the attachment URL.
+  var onSaveImage = function(node, graph) {
+    var style = $(node).attr('style') || '';
+    var styleObject = graph.stylesheet.getCellStyle(style, {});
+    var oldSource = styleObject.image || '';
+    var newSource = oldSource;
+    var dataSource = $(node).attr('data-source');
+    if (oldSource.substring(0, drawIOWebJarPathPrefix.length) === drawIOWebJarPathPrefix) {
+      // Convert draw.io WebJar URL to draw.io WAR path.
+      // See https://github.com/xwikisas/application-diagram/issues/11
+      newSource = oldSource.substring(drawIOWebJarPathPrefix.length);
+    } else if (diagramLinkHandler.isXWikiCustomLink(dataSource)) {
+      // Save the XWiki attachment reference instead of the attachment URL.
+      // We have to encode the value in order to avoid breaking the style string.
+      newSource = encodeURIComponent(dataSource);
+      $(node).removeAttr('data-source');
+    }
+    if (newSource !== oldSource) {
+      $(node).attr('style', style.replace(oldSource, newSource));
+    }
+  };
+
+  // Convert the draw.io WAR paths to draw.io WebJar paths (e.g. include the draw.io version in the path).
+  // Replace the attachment reference from the image source with the attachment URL.
+  var onLoadImage = function(node, graph) {
+    var style = $(node).attr('style') || '';
+    var styleObject = graph.stylesheet.getCellStyle(style, {});
+    var oldSource = styleObject.image || '';
+    var newSource = oldSource;
+    if (oldSource.substring(0, 4) === 'img/') {
+      // Convert draw.io WAR path to draw.io WebJar URL.
+      // See https://github.com/xwikisas/application-diagram/issues/11
+      newSource = drawIOWebJarPathPrefix + oldSource;
+    } else {
+      try {
+        var decodedOldSource = decodeURIComponent(oldSource);
+        if (diagramLinkHandler.isXWikiCustomLink(decodedOldSource)) {
+          // Replace the attachment reference from the image source with the attachment URL.
+          $(node).attr('data-source', decodedOldSource);
+          newSource = diagramLinkHandler.getURLFromCustomLink(decodedOldSource);
+        }
+      } catch (e) {
+        // Ignore.
+      }
+    }
+    if (newSource !== oldSource) {
+      $(node).attr('style', style.replace(oldSource, newSource));
+    }
+  };
+
+  // Convert the draw.io WebJar paths to draw.io WAR paths (e.g. remove the draw.io version).
+  // Convert attached images to data URI (but keep some metadata to idicate the attachment reference).
+  var onExportImage = function(node, graph) {
+    var style = $(node).attr('style') || '';
+    var styleObject = graph.stylesheet.getCellStyle(style, {});
+    var oldSource = styleObject.image || '';
+    var newSource = oldSource;
+    var dataSource = $(node).attr('data-source');
+    if (oldSource.substring(0, drawIOWebJarPathPrefix.length) === drawIOWebJarPathPrefix) {
+      // Convert the draw.io WebJar paths to draw.io WAR paths (e.g. remove the draw.io version).
+      newSource = oldSource.substring(drawIOWebJarPathPrefix.length);
+    } else if (oldSource.substring(0, 5) !== 'data:') {
+      // Convert other images to data URI (but keep some metadata to idicate the original source).
+      newSource = maybeConvertToDataURI(oldSource);
+      dataSource = dataSource || oldSource;
+    }
+    if (newSource !== oldSource) {
+      $(node).attr({
+        style: style.replace(oldSource, newSource),
+        'data-source': dataSource
+      });
+    }
+  };
+
+  var maybeConvertToDataURI = function(url) {
+    var image = getCachedImageByURL(url);
+    if (image) {
+      var canvas = document.createElement('canvas');
+      var context2D = canvas.getContext('2d');
+      canvas.height = image.naturalHeight;
+      canvas.width = image.naturalWidth;
+      context2D.drawImage(image, 0, 0);
+      try {
+        url = canvas.toDataURL();
+        var semicolonIndex = url.indexOf(';');
+        if (semicolonIndex &gt; 0) {
+          url = url.substring(0, semicolonIndex) + url.substring(url.indexOf(',', semicolonIndex + 1));
+        }
+      } catch (e) {
+        // Ignore.
+      }
+    }
+    return url;
+  };
+
+  var diagramImages = {};
+  var collectImages = function() {
+    $(this.diagramContainer).find('image').each(function() {
+      var absoluteURL = $(this).attr('xlink:href');
+      if (diagramImages.hasOwnProperty(absoluteURL)) {
+        return;
+      }
+      var image = diagramImages[absoluteURL] = new Image();
+      image.crossOrigin = 'use-credentials';
+      image.src = absoluteURL;
+    });
+  };
+  $(document).on('diagramEditorCreated', function(event, editorUI) {
+    editorUI.editor.addListener('fileLoaded', $.proxy(collectImages, editorUI));
+    editorUI.editor.graph.model.addListener(mxEvent.CHANGE, $.proxy(collectImages, editorUI));
+  });
+
+  var getCachedImageByURL = function(url) {
+    var absoluteURL = $('&lt;a/&gt;').attr('href', url).prop('href');
+    var image = diagramImages[absoluteURL];
+    if (image &amp;&amp; image.complete &amp;&amp; image.naturalWidth) {
+      return image;
+    }
+  };
+
+  // Convert the draw.io WAR paths to draw.io WebJar paths (e.g. include the draw.io version in the path).
+  var onImportImage = function(node, graph) {
+    onLoadImage(node, graph);
+  };
+
+  var onSaveLink = function(node) {
+    // Nothing to do here (save the link as is).
+  };
+
+  var onLoadLink = function(node) {
+    // Nothing to do here (keep the link as is).
+  };
+
+  // Replace custom internal links with absolute URLs (but keep some metadata to indicate the entity reference).
+  var onExportLink = function(node) {
+    var link = $(node).attr('link');
+    if (diagramLinkHandler.isXWikiCustomLink(link)) {
+      var url = diagramLinkHandler.getURLFromCustomLink(link);
+      var absoluteURL = $('&lt;a/&gt;').attr('href', url).prop('href');
+      $(node).attr({
+        link: absoluteURL,
+        'data-link': link
+      });
+    }
+  };
+
+  // Replace absolute URLs with internal custom links, if the target entity reference is indicated.
+  var onImportLink = function(node) {
+    var link = $(node).attr('data-link');
+    if (diagramLinkHandler.isXWikiCustomLink(link)) {
+      $(node).attr({
+        link: link,
+        'data-link': null
+      });
+    }
   };
 });</code>
     </property>

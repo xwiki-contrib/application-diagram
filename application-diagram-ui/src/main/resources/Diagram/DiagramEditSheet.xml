@@ -245,6 +245,7 @@ require.config({
     'xwiki-utils': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify'),
     'diagram-utils': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify'),
     'diagram-link-handler': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify'),
+    'diagram-graph-xml-filter': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify'),
     'resourceSelector': new XWiki.Document('WebHome', 'Diagram.ResourceSelector').getURL('jsx', 'minify=$minify')
   },
   shim: {
@@ -403,16 +404,15 @@ define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'diagram-utils',
     setData: function(data) {
       this.input.val(data);
     },
+    // We overwrite the base implementation because we don't want to support files that contain multiple diagrams.
     updateFileData: function() {
-      // We overwrite the base implementation because we don't want to support files that contain multiple diagrams.
-      // Also, we remove draw.io version from clipart paths for saving the relative links. This is needed as a fix for:
-      // https://github.com/xwikisas/application-diagram/issues/11 .
-      var graphXML = mxUtils.getPrettyXml(this.ui.editor.getGraphXml());
-      this.setData(graphXML.replace(/image=[\w/%.]*\/img/g, 'image=/img'));
+      this.setData(mxUtils.getPrettyXml(this.ui.editor.getGraphXml(true, true)));
     },
     open: function() {
-      var graphXML = diagramUtils.addLibraryInfo(this.getData() || '&lt;mxGraphModel/&gt;');
-      this.ui.editor.setGraphXml(mxUtils.parseXml(graphXML).documentElement);
+      var graphXML = this.getData() || '&lt;mxGraphModel/&gt;';
+      var graphNode = mxUtils.parseXml(graphXML).documentElement;
+      graphNode.fromStorage = true;
+      this.ui.editor.setGraphXml(graphNode);
       this.changeListener = mxUtils.bind(this, function(sender, eventObject) {
         this.setModified(true);
       });
@@ -648,10 +648,53 @@ define('diagram-link-editor', ['jquery', 'diagram-link-handler', 'draw.io', 'res
       callback(diagramLinkHandler.getCustomLinkFromResourceReference(resourceReference));
     });
   };
+
+  // Overwrite Graph.getSvg in order to replace XWiki custom links with absolute URLs.
+  // Also fix the text fallback for viewers with no support for foreignObjects.
+  var originalGraphGetSVG = Graph.prototype.getSvg;
+  Graph.prototype.getSvg = function(background, scale, border, nocrop, crisp, ignoreSelection, showText, imgExport,
+      linkTarget, hasShadow) {
+    imgExport = imgExport || this.createSvgImageExport();
+    var originalGetLinkForCellState = imgExport.getLinkForCellState;
+    imgExport.getLinkForCellState = function() {
+      var result = originalGetLinkForCellState.apply(this, arguments);
+      if (diagramLinkHandler.isXWikiCustomLink(result)) {
+        result = diagramLinkHandler.getURLFromCustomLink(result);
+      }
+      return result;
+    }
+    var originalDrawState = imgExport.drawState;
+    imgExport.drawState = function(state, canvas) {
+      var originalCreateAlternateContent = canvas.createAlternateContent;
+      canvas.createAlternateContent = function(fo, x, y, w, h, str, align, valign, wrap, format, overflow, clip,
+          rotation) {
+        if (format === 'html') {
+          // Keep only the text content.
+          str = $('&lt;div/&gt;').html(str).text() || this.foAltText;
+        }
+        return originalCreateAlternateContent.call(this, fo, x, y, w, h, str, align, valign, wrap, format, overflow,
+          clip, rotation);
+      };
+      return originalDrawState.apply(this, arguments);
+    };
+    try {
+      return originalGraphGetSVG.call(this, background, scale, border, nocrop, crisp, ignoreSelection, showText,
+        imgExport, linkTarget, hasShadow);
+    } finally {
+      imgExport.getLinkForCellState = originalGetLinkForCellState;
+      imgExport.drawState = originalDrawState;
+    }
+  };
 });
 
-define('diagram-editor', ['jquery', 'diagram-store', 'diagram-utils', 'xwiki-utils', 'diagram-link-editor'], function($,
-  diagramStore, diagramUtils, xutils) {
+define('diagram-editor', [
+  'jquery',
+  'diagram-store',
+  'diagram-utils',
+  'xwiki-utils',
+  'diagram-link-editor',
+  'diagram-graph-xml-filter'
+], function($, diagramStore, diagramUtils, xutils) {
 
   // These variables are used to decide if an image should be uploaded at original resolution or
   // should be declined for being too big.
@@ -667,6 +710,8 @@ define('diagram-editor', ['jquery', 'diagram-store', 'diagram-utils', 'xwiki-uti
     var editor = new Editor(/* chromeless: */ uiTheme === 'min', options.themes, /* model: */ null, /* graph: */ null,
       /* editable: */ true);
     var editorUI = new App(editor, options.container);
+    // This is usefull for debugging the diagram editor from the JavaScript console.
+    $(editorUI.container).data('diagramEditor', editorUI).trigger('diagramEditorCreated', editorUI);
     // Fix the editor UI before loading the diagram because layout changes can influence the way the shapes are drawn.
     fixEditorUI(editorUI);
     var file = diagramStore.createFile(editorUI, options.input, options.fileName);
@@ -806,9 +851,25 @@ define('diagram-editor', ['jquery', 'diagram-store', 'diagram-utils', 'xwiki-uti
     originalImportFiles.apply(this, newArgs);
   }
 
+  var urlParam = function(parameter, url) {
+    var results = new RegExp('[\?&amp;]' + parameter + '=([^&amp;#]*)').exec(url);
+    if (results === null) {
+       return null;
+    }
+    return decodeURIComponent(results[1]);
+  };
+
+  var getParameterValueFromURL = function(parameter, url) {
+    if (typeof URLSearchParams === 'function') {
+      return new URL(url, window.location.href).searchParams.get(parameter);
+    }
+    // IE will get here since it's not supporting URLSearchParams.
+    return urlParam(parameter, url);
+  };
+
   var originalLoadUrl = EditorUi.prototype.loadUrl;
   EditorUi.prototype.loadUrl = function(url, success, error, forceBinary, retry, dataUriPrefix) {
-    let exportedUrl = diagramUtils.getParameterValueFromURL('url', url);
+    let exportedUrl = getParameterValueFromURL('url', url);
     if (exportedUrl) {
       let diagramXML = diagramUtils.getDiagramXMLFromURL(exportedUrl);
       if (diagramXML) {
