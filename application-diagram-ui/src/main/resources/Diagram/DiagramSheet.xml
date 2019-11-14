@@ -149,12 +149,17 @@ define('xwiki-utils', ['jquery', 'xwiki-meta'], function($, xm) {
     return attachmentURL;
   };
 
-  var uploadAttachment = function(blob, fileName) {
-    var doc = new XWiki.Document(xm.documentReference);
+  var uploadAttachment = function(blob, attachment) {
+    var documentReference = xm.documentReference;
+    if (typeof attachment !== 'string') {
+      documentReference = attachment.parent;
+      attachment = attachment.name;
+    }
+    var doc = new XWiki.Document(documentReference);
     var url = doc.getURL('upload');
     var formData = new FormData();
     formData.append('filepath', blob);
-    formData.append('filename', fileName);
+    formData.append('filename', attachment);
     formData.append('form_token', xm.form_token);
     // The default redirect adds more time for the upload and we don't need to render those pages.
     formData.append('xredirect', doc.getURL('get', 'outputSyntax=plain'));
@@ -795,10 +800,6 @@ define('diagram-graph-xml-filter', ['jquery', 'diagram-link-handler'], function(
 
 .diagram-container &gt; .thumbnail .box {
   margin-bottom: 0;
-}
-
-.diagram-container &gt; .thumbnail svg {
-  max-width: 100%;
 }</code>
     </property>
     <property>

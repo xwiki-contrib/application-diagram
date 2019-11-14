@@ -80,8 +80,6 @@
   #set ($discard = $xwiki.jsx.use('Diagram.DiagramEditSheet'))
   &lt;div class="diagram-editor loading"&gt;
     &lt;input class="diagram-content" type="hidden" name="content" value="$escapetool.xml($tdoc.content)" /&gt;
-    &lt;input class="diagram-svg" type="hidden" name="Diagram.DiagramClass_0_svg"
-      value="$!escapetool.xml($doc.getValue('svg'))" /&gt;
   &lt;/div&gt;
   #diagramLinkModal()
 #end
@@ -377,16 +375,17 @@ define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'diagram-utils',
     function($, xm, xutils, diagramUtils) {
   var files = [];
   window._xfiles = files;
-  var createFile = function(ui, input, title) {
-    var file = new XWikiFile(ui, input, title);
+  var createFile = function(ui, input, title, documentReference) {
+    var file = new XWikiFile(ui, input, title, documentReference);
     files.push(file);
     return file;
   };
 
-  var XWikiFile = function(ui, input, title) {
+  var XWikiFile = function(ui, input, title, documentReference) {
     DrawioFile.call(this, ui);
     this.input = input;
     this.title = title;
+    this.documentReference = documentReference;
   };
 
   mxUtils.extend(XWikiFile, DrawioFile);
@@ -447,75 +446,61 @@ define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'diagram-utils',
     left.done($.proxy(right, 'resolve')).fail($.proxy(right, 'reject'));
   };
 
-  var saveCanvasAsAttachment = function(canvas) {
+  var imageCache = {};
+  var saveFileAsImageAttachment = function(file) {
     var deferred = $.Deferred();
-    var docRef = xm.documentReference;
-    var attachmentName = (docRef.name == 'WebHome' ? docRef.parent.name : docRef.name) + '.thumbnail.png';
-    // Keep only the last version of the attachment. Since 'toBlob' is not supported by IE the attachment won't be
-    // saved in this browser, falling back to the use of svg for pdf export.
-    xutils.deleteAttachment(attachmentName).always(function() {
-      try {
-        canvas.toBlob(function(blob) {
-          pipeDeferred(xutils.uploadAttachment(blob, attachmentName), deferred);
-        });
-      } catch(err) {
-        console.log(err);
-        deferred.reject();
-      }
-    });
+    // This is a workaround for https://github.com/jgraph/drawio/issues/490
+    // Stop editing for getting the latest content from diagram
+    file.ui.editor.graph.stopEditing(false);
+    var svgRoot = file.ui.editor.graph.getSvg(/* background: */ '#ffffff', /* scale: */ null, /* border: */ null,
+      /* nocrop: */ true, /* crisp: */ null, /* ignoreSelection: */ true);
+    // Embed the images because the PDF exporter might not be able to access them.
+    file.ui.convertImages(svgRoot, function() {
+      var svg = '&lt;?xml version="1.0" encoding="UTF-8"?&gt;\n' +
+        '&lt;!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"&gt;\n' +
+        mxUtils.getXml(svgRoot);
+      var blob = new Blob([svg], {type: 'image/svg+xml'});
+      var attachmentReference = new XWiki.AttachmentReference('diagram.svg', file.documentReference);
+      // Avoid creating too many versions of the attachment.
+      xutils.deleteAttachment(attachmentReference).always(function() {
+        pipeDeferred(xutils.uploadAttachment(blob, attachmentReference), deferred);
+      });
+    }, imageCache);
     return deferred.promise();
   };
 
-  var saveFileAsImageAttachment = function(file) {
-    var deferred = $.Deferred();
-    file.getUi().exportToCanvas(function(canvas) {
-      if (canvas) {
-        pipeDeferred(saveCanvasAsAttachment(canvas), deferred);
-      } else {
-        deferred.reject();
-      }
-    }, null, null, null, function(e) {
-      new XWiki.widgets.Notification(
-        $jsontool.serialize($services.localization.render('diagram.editor.saveAsImageAttachmentError')), 'error');
-    }, null, true);
-    return deferred.promise();
+  var saveFilesAsImageAttachments = function() {
+    var uploadDeferred = $.Deferred().resolve();
+    forEachOpenedFile(function(file) {
+      var nextUpload = $.proxy(saveFileAsImageAttachment, null, file);
+      uploadDeferred = uploadDeferred.then(nextUpload, nextUpload);
+    });
+    return uploadDeferred.promise();
   };
 
   var uploadInProgress = false;
-  // Save the diagram as an image attachment on this page. Stop the default save until the upload action is completed
-  // and trigger it after. Used for export as pdf.
+  // Attach the diagram SVG to the diagram page in order to use it for viewing the diagram and for exporting the diagram
+  // to PDF. For this we need to stop the default save until the upload action is completed and trigger it after.
   $(document).on('xwiki:actions:beforeSave', function(event, data) {
-    forEachOpenedFile(function(file) {
-      if (file.isModified() &amp;&amp; !uploadInProgress) {
-        uploadInProgress = true;
-        event.preventDefault();
-        // This is for older versions of XWiki (&lt;10.8.1) where we had to stop the original event.
-        if (data &amp;&amp; data.originalEvent &amp;&amp; typeof data.originalEvent.stop === 'function') {
-          data.originalEvent.stop();
-        }
-        saveFileAsImageAttachment(file).always(function() {
-          var button = $('input[name=action_save' + (data &amp;&amp; data['continue'] ? 'andcontinue' : '') + ']');
-          button.click();
-        });
-      } else {
-        uploadInProgress = false;
+    if (!uploadInProgress) {
+      uploadInProgress = true;
+      event.preventDefault();
+      // This is for older versions of XWiki (&lt;10.8.1) where we had to stop the original event.
+      if (data &amp;&amp; data.originalEvent &amp;&amp; typeof data.originalEvent.stop === 'function') {
+        data.originalEvent.stop();
       }
-    });
+      var saveButton = $('input[name=action_save' + (data &amp;&amp; data['continue'] ? 'andcontinue' : '') + ']');
+      saveButton.prop('disabled', true);
+      saveFilesAsImageAttachments().always(function() {
+        saveButton.prop('disabled', false).click();
+      });
+    } else {
+      uploadInProgress = false;
+    }
   });
 
   // We need to update the form fields before the form is validated (for Preview, Save and Save &amp; Continue).
   $(document).on('xwiki:actions:beforePreview xwiki:actions:beforeSave', updateFormFields);
-
-  $(document).on('xwiki:actions:beforeSave', function() {
-    forEachOpenedFile(function(file) {
-      var svgInput = file.input.next('.diagram-svg');
-      if (svgInput.length &gt; 0) {
-        var svgRoot = file.getUi().editor.graph.getSvg('#ffffff', true, false, false, null, true);
-        // Have relative clipart paths inside the cached svg for not saving draw.io version as well.
-        svgInput.val(mxUtils.getXml(svgRoot).replace(/href="[\w:/%.]*\/img/g, 'href="/img'));
-      }
-    });
-  });
 
   var submitInProgress = false;
   // Disable the leave confirmation when the form action buttons are used.
@@ -714,7 +699,7 @@ define('diagram-editor', [
     $(editorUI.container).data('diagramEditor', editorUI).trigger('diagramEditorCreated', editorUI);
     // Fix the editor UI before loading the diagram because layout changes can influence the way the shapes are drawn.
     fixEditorUI(editorUI);
-    var file = diagramStore.createFile(editorUI, options.input, options.fileName);
+    var file = diagramStore.createFile(editorUI, options.input, options.fileName, options.documentReference);
     // The first letter of the file name is used to determine the storage type. Let's use 'X' for XWiki storage.
     editorUI.loadFile('X' + options.fileName, true, file);
     return editorUI;
@@ -983,10 +968,30 @@ define('diagram-editor', [
   mxDualRuler.prototype = Object.create(originalMxDualRuler.prototype);
   mxDualRuler.prototype.constructor = mxDualRuler;
 
+  var themes = {};
+  var getDiagramEditorConfig = function(container) {
+    var input = $(container).children('input.diagram-content');
+    var documentReference = input.data('reference') || '';
+    if (typeof documentReference === 'string') {
+      documentReference = XWiki.Model.resolve(documentReference, XWiki.EntityType.DOCUMENT,
+        XWiki.currentDocument.documentReference);
+    }
+    var fileName = input.data('title') || $('#document-title').text();
+    if (!fileName) {
+      fileName = documentReference.name == 'WebHome' ? documentReference.parent.name : documentReference.name;
+    }
+    return {
+      container: container,
+      themes: themes,
+      fileName: fileName,
+      input: input,
+      documentReference: documentReference
+    };
+  };
+
   //
   // jQuery plugin
   //
-  var themes = {};
   $.fn.editDiagram = function(options) {
     return this.on('click', 'button', function(event) {
       // Make sure the buttons from the editor UI don't submit the edit form.
@@ -1000,12 +1005,7 @@ define('diagram-editor', [
       // We need this CSS class on the body element in order to have proper styling for the UI elements (menus, dialogs,
       // tooltips) that are added directly under the body element.
       $(document.body).addClass('geEditor');
-      createDiagramEditor($.extend({
-        container: this,
-        themes: themes,
-        fileName: $('#document-title').text() || XWiki.currentPage,
-        input: $(this).children('input.diagram-content')
-      }, options));
+      createDiagramEditor($.extend(getDiagramEditorConfig(this), options));
       $(this).removeClass('loading');
     });
   };

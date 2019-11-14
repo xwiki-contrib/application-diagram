@@ -168,8 +168,10 @@
     #set ($diagram = $xwiki.getDocument($reference))
     #set ($diagramTitle = $diagram.plainTitle)
     #if ($diagram.getObject('Diagram.DiagramClass'))
-      #if ($xcontext.action == 'edit' || ($xcontext.macro.params.cached == 'true' &amp;&amp; $xcontext.action != 'export'))
-        #set ($output = "{{html clean='false'}}$!diagram.getValue('svg'){{/html}}")
+      #if ($xcontext.action == 'edit' || $xcontext.action == 'export' || $request.xpage == 'print'
+          || $xcontext.macro.params.cached == 'true')
+        #set ($diagramURL = $diagram.getAttachmentURL('diagram.svg', 'download', "v=$!diagram.version"))
+        #set ($output = "{{html clean='false'}}&lt;img src='$diagramURL' alt='$escapetool.xml($diagramTitle)'/&gt;{{/html}}")
       #else
         #set ($output = "{{display reference='$services.rendering.escape($reference, $xcontext.macro.doc.syntax)' /}}")
         #set ($showCaption = false)

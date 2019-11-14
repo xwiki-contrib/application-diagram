@@ -41,30 +41,9 @@
   <hidden>true</hidden>
   <content>{{velocity}}
 #if ($doc.getObject('Diagram.DiagramClass') || "$!request.source" != '')
-  #if ($xcontext.action == 'get' &amp;&amp; $request.data == 'svg')
-    #set ($svg = $doc.getValue('svg'))
-    #set ($regex = 'href="\/img')
-    #set ($newPrefix = 'href="' + "$services.webjars.url('org.xwiki.contrib:draw.io', '')" + '/img')
-    #if ("$!svg" == '')
-      #set ($svg = '&lt;svg/&gt;')
-    #end
-    #set ($discard = $response.setContentType('image/svg+xml'))
-    ## Update clipart links inside svg since they are saved as relative ones.
-    #set ($svg = $svg.replaceAll($regex, $newPrefix))
-    #set ($discard = $response.setContentLength($svg.length()))
-    #set ($discard = $response.writer.write($svg))
-  #elseif ($xcontext.action == 'export' || $request.xpage == 'print')
-    #set ($fileName = $doc.name)
-    #if ($fileName == 'WebHome')
-      #set ($fileName = $doc.documentReference.lastSpaceReference.name)
-    #end
-    #set ($fileName = "${fileName}.thumbnail.png")
-    #set ($diagramURL = $doc.getAttachmentURL($fileName, 'download', "v=$!doc.version"))
-    ## Use the svg for export in case the attachment does not exists.
-    #if (!$doc.getAttachment($fileName))
-      #set ($diagramURL = $doc.getURL('get', "data=svg&amp;v=$!doc.version"))
-    #end
+  #if ($xcontext.action == 'export' || $request.xpage == 'print')
     {{html clean="false"}}
+      #set ($diagramURL = $doc.getAttachmentURL('diagram.svg', 'download', "v=$!doc.version"))
       &lt;img src="$diagramURL" alt="$escapetool.xml($doc.plainTitle)" /&gt;
     {{/html}}
   #else
@@ -392,7 +371,7 @@ define('spin-global', ['spin'], function(spin) {
       var fromStorage = false;
       var diagramXML = diagramUtils.getDiagramXMLFromURL(window.location.href);
       if (!diagramXML) {
-        diagramXML = $(this).data('model');
+        diagramXML = $(this).data('model') || '&lt;mxGraphModel/&gt;';
         fromStorage = true;
       }
       var diagramRootNode = mxUtils.parseXml(diagramXML).documentElement;

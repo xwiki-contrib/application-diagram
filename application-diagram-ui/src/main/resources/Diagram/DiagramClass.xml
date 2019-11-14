@@ -40,32 +40,6 @@
   <syntaxId>xwiki/2.0</syntaxId>
   <hidden>true</hidden>
   <content/>
-  <class>
-    <name>Diagram.DiagramClass</name>
-    <customClass/>
-    <customMapping/>
-    <defaultViewSheet/>
-    <defaultEditSheet/>
-    <defaultWeb/>
-    <nameField/>
-    <validationScript/>
-    <svg>
-      <contenttype>PureText</contenttype>
-      <customDisplay/>
-      <disabled>0</disabled>
-      <editor>PureText</editor>
-      <name>svg</name>
-      <number>1</number>
-      <picker>0</picker>
-      <prettyName>SVG</prettyName>
-      <rows>5</rows>
-      <size>40</size>
-      <unmodifiable>0</unmodifiable>
-      <validationMessage/>
-      <validationRegExp/>
-      <classType>com.xpn.xwiki.objects.classes.TextAreaClass</classType>
-    </svg>
-  </class>
   <object>
     <name>Diagram.DiagramClass</name>
     <number>0</number>
