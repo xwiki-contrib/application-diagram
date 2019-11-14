@@ -189,7 +189,7 @@ define('xwiki-utils', ['jquery', 'xwiki-meta'], function($, xm) {
 /**
  * Utility functions used in both view and edit modes.
  */
-define('diagram-utils', ['jquery', 'mxgraph-common'], function($) {
+define('diagram-utils', ['jquery', 'diagram-link-handler'], function($, diagramLinkHandler) {
   //
   // Get a XML diagram from hash.
   // The hash begins with 'R' &amp; continues with the encoded diagram.
@@ -229,6 +229,24 @@ define('diagram-utils', ['jquery', 'mxgraph-common'], function($) {
       deferred.reject();
     });
     return deferred.promise();
+  };
+
+  //
+  // Fix XWiki custom links in print preview.
+  //
+  var originalPrintPreviewAddGraphFragment = mxPrintPreview.prototype.addGraphFragment;
+  mxPrintPreview.prototype.addGraphFragment = function(dx, dy, scale, pageNumber, div, clip) {
+    var result = originalPrintPreviewAddGraphFragment.apply(this, arguments);
+    // Convert XWiki custom links to absolute URLs.
+    $(div).find('a').each(function() {
+      var link = $(this).attr('xlink:href');
+      if (diagramLinkHandler.isXWikiCustomLink(link)) {
+        var url = diagramLinkHandler.getURLFromCustomLink(link);
+        var absoluteURL = $('&lt;a/&gt;').attr('href', url).prop('href');
+        $(this).attr('xlink:href', absoluteURL);
+      }
+    });
+    return result;
   };
 
   return {
