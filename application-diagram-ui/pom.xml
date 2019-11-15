@@ -68,6 +68,14 @@
       <scope>runtime</scope>
       <type>xar</type>
     </dependency>
+    <!-- We need this for the administration section (ConfigurableClass) -->
+    <dependency>
+      <groupId>org.xwiki.platform</groupId>
+      <artifactId>xwiki-platform-administration-ui</artifactId>
+      <version>${platform.version}</version>
+      <scope>runtime</scope>
+      <type>xar</type>
+    </dependency>
     <!-- Rendering Macros -->
     <dependency>
       <groupId>org.xwiki.platform</groupId>
