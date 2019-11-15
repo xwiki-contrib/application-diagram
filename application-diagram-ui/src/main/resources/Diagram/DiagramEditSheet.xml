@@ -78,214 +78,13 @@
   #set ($keyboardShortcutsEnabled = false)
   #set ($discard = $xwiki.ssx.use('Diagram.DiagramSheet'))
   #set ($discard = $xwiki.jsx.use('Diagram.DiagramEditSheet'))
-  &lt;div class="diagram-editor loading"&gt;
+  &lt;div class="diagram-editor loading" data-diagram-config="$escapetool.xml($jsontool.serialize($diagramConfig))"&gt;
     &lt;input class="diagram-content" type="hidden" name="content" value="$escapetool.xml($tdoc.content)" /&gt;
   &lt;/div&gt;
   #diagramLinkModal()
 #end
 {{/html}}
 {{/velocity}}</content>
-  <object>
-    <name>Diagram.DiagramEditSheet</name>
-    <number>0</number>
-    <className>XWiki.JavaScriptExtension</className>
-    <guid>f54527c8-9e2a-4f96-8970-a520f93ef866</guid>
-    <class>
-      <name>XWiki.JavaScriptExtension</name>
-      <customClass/>
-      <customMapping/>
-      <defaultViewSheet/>
-      <defaultEditSheet/>
-      <defaultWeb/>
-      <nameField/>
-      <validationScript/>
-      <cache>
-        <cache>0</cache>
-        <disabled>0</disabled>
-        <displayType>select</displayType>
-        <multiSelect>0</multiSelect>
-        <name>cache</name>
-        <number>5</number>
-        <prettyName>Caching policy</prettyName>
-        <relationalStorage>0</relationalStorage>
-        <separator> </separator>
-        <separators>|, </separators>
-        <size>1</size>
-        <unmodifiable>0</unmodifiable>
-        <values>long|short|default|forbid</values>
-        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
-      </cache>
-      <code>
-        <contenttype>PureText</contenttype>
-        <disabled>0</disabled>
-        <editor>PureText</editor>
-        <name>code</name>
-        <number>2</number>
-        <prettyName>Code</prettyName>
-        <rows>20</rows>
-        <size>50</size>
-        <unmodifiable>0</unmodifiable>
-        <classType>com.xpn.xwiki.objects.classes.TextAreaClass</classType>
-      </code>
-      <name>
-        <disabled>0</disabled>
-        <name>name</name>
-        <number>1</number>
-        <prettyName>Name</prettyName>
-        <size>30</size>
-        <unmodifiable>0</unmodifiable>
-        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
-      </name>
-      <parse>
-        <disabled>0</disabled>
-        <displayFormType>select</displayFormType>
-        <displayType>yesno</displayType>
-        <name>parse</name>
-        <number>4</number>
-        <prettyName>Parse content</prettyName>
-        <unmodifiable>0</unmodifiable>
-        <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
-      </parse>
-      <use>
-        <cache>0</cache>
-        <disabled>0</disabled>
-        <displayType>select</displayType>
-        <multiSelect>0</multiSelect>
-        <name>use</name>
-        <number>3</number>
-        <prettyName>Use this extension</prettyName>
-        <relationalStorage>0</relationalStorage>
-        <separator> </separator>
-        <separators>|, </separators>
-        <size>1</size>
-        <unmodifiable>0</unmodifiable>
-        <values>currentPage|onDemand|always</values>
-        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
-      </use>
-    </class>
-    <property>
-      <cache>long</cache>
-    </property>
-    <property>
-      <code>/*
-#set ($minify = $services.debug.minify != false)
-#set ($suffix = "#if ($minify).min#end")
-*/
-// mxGraph Client Configuration
-var mxBasePath = "$services.webjars.url('org.xwiki.contrib:mxgraph-client', '')";
-var mxLanguage = '$xcontext.locale';
-
-var mxGraphEditorBasePath = "$services.webjars.url('org.xwiki.contrib:mxgraph-editor', '')";
-
-// Diagram Editor Configuration
-var diagramEditorBasePath = "$services.webjars.url('org.xwiki.contrib:draw.io', '')";
-var RESOURCES_PATH = diagramEditorBasePath + 'resources';
-// Comment out the following line when using the basic mxGraph Editor.
-var RESOURCE_BASE = RESOURCES_PATH + '/dia';
-var STENCIL_PATH = diagramEditorBasePath + 'stencils';
-var IMAGE_PATH = diagramEditorBasePath + 'images';
-var STYLE_PATH = CSS_PATH = diagramEditorBasePath + 'styles';
-var OPEN_FORM = diagramEditorBasePath + 'open.html';
-
-var SHAPES_PATH = diagramEditorBasePath + 'shapes';
-var GRAPH_IMAGE_PATH = diagramEditorBasePath + 'img';
-var TEMPLATE_PATH = diagramEditorBasePath + 'templates';
-
-var PROXY_URL = new XWiki.Document('DiagramProxy', 'Diagram').getURL('get');
-
-var isLocalStorage = true;
-
-var urlParams = (function(params) {
-  var pairs = window.location.search.substr(1).split('&amp;');
-  pairs.forEach(function(pair) {
-    var parts = pair.split('=', 2);
-    if (parts.length === 2) {
-      params[parts[0]] = decodeURIComponent(parts[1].replace(/\+/g, " "));
-    }
-  });
-  return params;
-})({
-  // Don't show the splash screen.
-  'splash': '0',
-  // Disable the tabbed UI.
-  'pages': '0',
-  // Disable the GitHub integration.
-  'gh': '0',
-  // Disable the GitLab integration.
-  'gl': '0',
-  // Disable the Dropbox integration.
-  'db': '0',
-  // Disable the Google Drive integration.
-  'gapi': '0',
-  // Disable Google Analytics.
-  'analytics': '0',
-  // Disable the One Drive integration.
-  'od': '0',
-  // Disable the Trello integration.
-  'tr': '0'
-});
-
-// Disabling the integration with these external services is not enough because the draw.io code has hard-coded references.
-var DriveFile = DropboxFile = GitHubFile = OneDriveFile = TrelloFile = false;
-
-require.config({
-  paths: {
-    'mxgraph-init': diagramEditorBasePath + 'js/draw.io.init$suffix',
-    'mxgraph-client': mxBasePath + 'mxClient.bundle$suffix',
-    'jscolor': mxGraphEditorBasePath + 'jscolor/jscolor.min',
-    'sanitizer': mxGraphEditorBasePath + 'sanitizer/sanitizer.min',
-    'mxgraph-editor': mxGraphEditorBasePath + 'mxGraphEditor$suffix',
-    'base64': mxGraphEditorBasePath + 'deflate/base64.min',
-    'pako': mxGraphEditorBasePath + 'deflate/pako.min',
-    'spin': diagramEditorBasePath + 'js/spin/spin.min',
-    'jszip': diagramEditorBasePath + 'js/jszip/jszip.min',
-    'draw.io': diagramEditorBasePath + 'js/draw.io$suffix',
-    'xwiki-utils': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify'),
-    'diagram-utils': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify'),
-    'diagram-link-handler': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify'),
-    'diagram-graph-xml-filter': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify'),
-    'resourceSelector': new XWiki.Document('WebHome', 'Diagram.ResourceSelector').getURL('jsx', 'minify=$minify')
-  },
-  shim: {
-    'mxgraph-client': ['mxgraph-init'],
-    'mxgraph-editor': ['mxgraph-client', 'jscolor', 'sanitizer'],
-    'draw.io': ['mxgraph-editor', 'base64', 'pako-global', 'spin-global', 'jszip-global']
-  },
-  map: {
-    'diagram-utils': {
-      'mxgraph-common': 'mxgraph-editor'
-    },
-    'diagram-link-handler': {
-      'draw.io.common': 'draw.io'
-    }
-  }
-})
-
-define('pako-global', ['pako'], function(pako) {
-  // draw.io expects a global variable.
-  window.pako = pako;
-});
-
-define('spin-global', ['spin'], function(spin) {
-  // draw.io expects a global variable.
-  window.Spinner = spin;
-});
-
-define('jszip-global', ['jszip'], function(JSZip) {
-  // draw.io expects a global variable.
-  window.JSZip = JSZip;
-});</code>
-    </property>
-    <property>
-      <name>Configuration</name>
-    </property>
-    <property>
-      <parse>1</parse>
-    </property>
-    <property>
-      <use>onDemand</use>
-    </property>
-  </object>
   <object>
     <name>Diagram.DiagramEditSheet</name>
     <number>1</number>
@@ -1108,9 +907,25 @@ define('diagram-editor', [
       <cache>long</cache>
     </property>
     <property>
-      <code>require(['jquery', 'diagram-editor'], function($, diagramEditorPromise) {
-  diagramEditorPromise.done(function() {
-    $('.diagram-editor').editDiagram();
+      <code>require.config({
+  paths: {
+    'diagram-setup': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$!services.debug.minify')
+  },
+  map: {
+    'diagram-utils': {
+      'mxgraph-common': 'mxgraph-editor'
+    },
+    'diagram-link-handler': {
+      'draw.io.common': 'draw.io'
+    }
+  }
+});
+
+require(['diagram-setup'], function() {
+  require(['jquery', 'diagram-editor'], function($, diagramEditorPromise) {
+    diagramEditorPromise.done(function() {
+      $('.diagram-editor').editDiagram();
+    });
   });
 });</code>
     </property>

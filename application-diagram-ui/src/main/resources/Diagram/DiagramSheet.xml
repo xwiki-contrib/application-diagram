@@ -41,6 +41,13 @@
   <hidden>true</hidden>
   <content>{{velocity}}
 #if ($doc.getObject('Diagram.DiagramClass'))
+  #set ($diagramConfig = {
+    "debug": $services.debug.minify.equals(false),
+    "locale": $xcontext.locale,
+    "mxGraphClientBasePath": $services.webjars.url('org.xwiki.contrib:mxgraph-client', ''),
+    "mxGraphEditorBasePath": $services.webjars.url('org.xwiki.contrib:mxgraph-editor', ''),
+    "drawIOBasePath": $services.webjars.url('org.xwiki.contrib:draw.io', '')
+  })
   #if ($xcontext.action == 'edit')
     {{include reference="Diagram.DiagramEditSheet" /}}
   #else
@@ -187,72 +194,108 @@ define('xwiki-utils', ['jquery', 'xwiki-meta'], function($, xm) {
 });
 
 /**
- * Utility functions used in both view and edit modes.
+ * Diagram application configuration received from the server side.
  */
-define('diagram-utils', ['jquery', 'diagram-link-handler'], function($, diagramLinkHandler) {
-  //
-  // Get a XML diagram from hash.
-  // The hash begins with 'R' &amp; continues with the encoded diagram.
-  //
-  var getDiagramXMLFromURL = function(url) {
-    let hashIndex = url.indexOf('#R');
-    if (hashIndex &gt; -1) {
-      // Exclude first 2 letters from hash (#R).
-      let hash = url.substring(hashIndex+2);
-      try {
-        let decodedData = decodeURIComponent(hash);
-        let graph = new Graph();
-        let rawDiagram = graph.decompress(decodedData);
-        return rawDiagram;
-      } catch (e) {
-        console.error(e.stack)
+define('diagram-config', ['jquery'], function($) {
+  return $('[data-diagram-config]').data('diagramConfig');
+});
+
+/**
+ * Diagram application setup.
+ */
+define('diagram-setup', ['diagram-config'], function(diagramConfig) {
+  // mxGraph client setup
+  window.mxBasePath = diagramConfig.mxGraphClientBasePath;
+  window.mxLanguage = diagramConfig.locale;
+
+  // draw.io setup
+  var drawIOBasePath = diagramConfig.drawIOBasePath;
+  window.RESOURCES_PATH = drawIOBasePath + 'resources';
+  window.RESOURCE_BASE = RESOURCES_PATH + '/dia';
+  window.STENCIL_PATH = drawIOBasePath + 'stencils';
+  window.IMAGE_PATH = drawIOBasePath + 'images';
+  window.STYLE_PATH = CSS_PATH = drawIOBasePath + 'styles';
+  window.SHAPES_PATH = drawIOBasePath + 'shapes';
+  window.GRAPH_IMAGE_PATH = drawIOBasePath + 'img';
+  window.TEMPLATE_PATH = drawIOBasePath + 'templates';
+  window.PROXY_URL = new XWiki.Document('DiagramProxy', 'Diagram').getURL('get');
+  window.isLocalStorage = true;
+
+  window.urlParams = (function(params) {
+    var pairs = window.location.search.substr(1).split('&amp;');
+    pairs.forEach(function(pair) {
+      var parts = pair.split('=', 2);
+      if (parts.length === 2) {
+        params[parts[0]] = decodeURIComponent(parts[1].replace(/\+/g, " "));
       }
+    });
+    return params;
+  })({
+    // Don't show the splash screen.
+    'splash': '0',
+    // Disable the tabbed UI.
+    'pages': '0',
+    // Disable the GitHub integration.
+    'gh': '0',
+    // Disable the GitLab integration.
+    'gl': '0',
+    // Disable the Dropbox integration.
+    'db': '0',
+    // Disable the Google Drive integration.
+    'gapi': '0',
+    // Disable Google Analytics.
+    'analytics': '0',
+    // Disable the One Drive integration.
+    'od': '0',
+    // Disable the Trello integration.
+    'tr': '0'
+  });
+
+  // Disabling the integration with these external services is not enough because the draw.io code has hard-coded
+  // references.
+  window.DriveFile = window.DropboxFile = window.GitHubFile = window.OneDriveFile = window.TrelloFile = false;
+
+  var suffix = diagramConfig.debug ? '' : '.min';
+  var mxGraphEditorBasePath = diagramConfig.mxGraphEditorBasePath;
+  require.config({
+    paths: {
+      'base64': mxGraphEditorBasePath + 'deflate/base64.min',
+      'jscolor': mxGraphEditorBasePath + 'jscolor/jscolor.min',
+      'pako': mxGraphEditorBasePath + 'deflate/pako.min',
+      'sanitizer': mxGraphEditorBasePath + 'sanitizer/sanitizer.min',
+      'spin': drawIOBasePath + 'js/spin/spin.min',
+      'jszip': drawIOBasePath + 'js/jszip/jszip.min',
+      'mxgraph-init': drawIOBasePath + 'js/draw.io.init' + suffix,
+      'mxgraph-client': mxBasePath + 'mxClient.bundle' + suffix,
+      'mxgraph-editor': mxGraphEditorBasePath + 'mxGraphEditor' + suffix,
+      'mxgraph-viewer': mxGraphEditorBasePath + 'mxGraphViewer' + suffix,
+      'draw.io': drawIOBasePath + 'js/draw.io' + suffix,
+      'draw.io.viewer': drawIOBasePath + 'js/draw.io.viewer' + suffix,
+      'resourceSelector': new XWiki.Document('WebHome', 'Diagram.ResourceSelector').getURL('jsx', 'minify=' + !diagramConfig.debug)
+    },
+    shim: {
+      'mxgraph-client': ['mxgraph-init'],
+      'mxgraph-editor': ['mxgraph-client', 'jscolor', 'sanitizer'],
+      'mxgraph-viewer': ['mxgraph-client', 'sanitizer'],
+      'draw.io': ['mxgraph-editor', 'base64', 'pako-global', 'spin-global', 'jszip-global'],
+      'draw.io.viewer': ['mxgraph-viewer', 'pako-global', 'spin-global'],
     }
-    return null;
-  };
+  })
 
-  //
-  // Load the translation file and the default theme.
-  //
-  var loadTranslationAndTheme = function() {
-    var deferred = $.Deferred();
-    mxResources.loadDefaultBundle = false;
-    var bundle = mxResources.getDefaultBundle(RESOURCE_BASE, mxLanguage) ||
-      mxResources.getSpecialBundle(RESOURCE_BASE, mxLanguage);
-    // The theme is important because it controls how the shapes are rendered.
-    mxUtils.getAll([bundle, STYLE_PATH + '/default.xml'], function(response) {
-      // Adds bundle text to resources.
-      mxResources.parse(response[0].getText());
-      deferred.resolve(response[1].getDocumentElement());
-    }, function() {
-      // Failed to load the translation file or the theme.
-      deferred.reject();
-    });
-    return deferred.promise();
-  };
+  define('pako-global', ['pako'], function(pako) {
+    // draw.io expects a global variable.
+    window.pako = pako;
+  });
 
-  //
-  // Fix XWiki custom links in print preview.
-  //
-  var originalPrintPreviewAddGraphFragment = mxPrintPreview.prototype.addGraphFragment;
-  mxPrintPreview.prototype.addGraphFragment = function(dx, dy, scale, pageNumber, div, clip) {
-    var result = originalPrintPreviewAddGraphFragment.apply(this, arguments);
-    // Convert XWiki custom links to absolute URLs.
-    $(div).find('a').each(function() {
-      var link = $(this).attr('xlink:href');
-      if (diagramLinkHandler.isXWikiCustomLink(link)) {
-        var url = diagramLinkHandler.getURLFromCustomLink(link);
-        var absoluteURL = $('&lt;a/&gt;').attr('href', url).prop('href');
-        $(this).attr('xlink:href', absoluteURL);
-      }
-    });
-    return result;
-  };
+  define('spin-global', ['spin'], function(spin) {
+    // draw.io expects a global variable.
+    window.Spinner = spin;
+  });
 
-  return {
-    getDiagramXMLFromURL: getDiagramXMLFromURL,
-    loadTranslationAndTheme: loadTranslationAndTheme
-  };
+  define('jszip-global', ['jszip'], function(JSZip) {
+    // draw.io expects a global variable.
+    window.JSZip = JSZip;
+  });
 });
 
 /**
@@ -380,7 +423,7 @@ define('diagram-link-handler', ['xwiki-utils', 'draw.io.common'], function(xutil
  *   &lt;/li&gt;
  * &lt;/ul&gt;
  */
-define('diagram-graph-xml-filter', ['jquery', 'diagram-link-handler'], function($, diagramLinkHandler) {
+define('diagram-graph-xml-filter', ['jquery', 'diagram-config', 'diagram-link-handler'], function($, diagramConfig, diagramLinkHandler) {
   var originalGetGraphXml = Editor.prototype.getGraphXml;
   Editor.prototype.getGraphXml = function(ignoreSelection, forStorage) {
     var node = originalGetGraphXml.apply(this, arguments);
@@ -421,20 +464,19 @@ define('diagram-graph-xml-filter', ['jquery', 'diagram-link-handler'], function(
     return $(node).find('UserObject[link]');
   };
 
-  var drawIOWebJarPathPrefix = $jsontool.serialize($services.webjars.url('org.xwiki.contrib:draw.io', ''));
-
   // Convert the draw.io WebJar paths to draw.io WAR paths (e.g. remove the draw.io version from the path).
   // Internal images should be saved using the attachment reference instead of the attachment URL.
+  var drawIOBasePath = diagramConfig.drawIOBasePath;
   var onSaveImage = function(node, graph) {
     var style = $(node).attr('style') || '';
     var styleObject = graph.stylesheet.getCellStyle(style, {});
     var oldSource = styleObject.image || '';
     var newSource = oldSource;
     var dataSource = $(node).attr('data-source');
-    if (oldSource.substring(0, drawIOWebJarPathPrefix.length) === drawIOWebJarPathPrefix) {
+    if (oldSource.substring(0, drawIOBasePath.length) === drawIOBasePath) {
       // Convert draw.io WebJar URL to draw.io WAR path.
       // See https://github.com/xwikisas/application-diagram/issues/11
-      newSource = oldSource.substring(drawIOWebJarPathPrefix.length);
+      newSource = oldSource.substring(drawIOBasePath.length);
     } else if (diagramLinkHandler.isXWikiCustomLink(dataSource)) {
       // Save the XWiki attachment reference instead of the attachment URL.
       // We have to encode the value in order to avoid breaking the style string.
@@ -456,7 +498,7 @@ define('diagram-graph-xml-filter', ['jquery', 'diagram-link-handler'], function(
     if (oldSource.substring(0, 4) === 'img/') {
       // Convert draw.io WAR path to draw.io WebJar URL.
       // See https://github.com/xwikisas/application-diagram/issues/11
-      newSource = drawIOWebJarPathPrefix + oldSource;
+      newSource = drawIOBasePath + oldSource;
     } else {
       try {
         var decodedOldSource = decodeURIComponent(oldSource);
@@ -482,9 +524,9 @@ define('diagram-graph-xml-filter', ['jquery', 'diagram-link-handler'], function(
     var oldSource = styleObject.image || '';
     var newSource = oldSource;
     var dataSource = $(node).attr('data-source');
-    if (oldSource.substring(0, drawIOWebJarPathPrefix.length) === drawIOWebJarPathPrefix) {
+    if (oldSource.substring(0, drawIOBasePath.length) === drawIOBasePath) {
       // Convert the draw.io WebJar paths to draw.io WAR paths (e.g. remove the draw.io version).
-      newSource = oldSource.substring(drawIOWebJarPathPrefix.length);
+      newSource = oldSource.substring(drawIOBasePath.length);
     } else if (oldSource.substring(0, 5) !== 'data:') {
       // Convert other images to data URI (but keep some metadata to idicate the original source).
       newSource = maybeConvertToDataURI(oldSource);
@@ -580,13 +622,82 @@ define('diagram-graph-xml-filter', ['jquery', 'diagram-link-handler'], function(
       });
     }
   };
+});
+
+/**
+ * Utility functions used in both view and edit modes.
+ */
+define('diagram-utils', ['jquery', 'diagram-link-handler'], function($, diagramLinkHandler) {
+  //
+  // Get a XML diagram from hash.
+  // The hash begins with 'R' &amp; continues with the encoded diagram.
+  //
+  var getDiagramXMLFromURL = function(url) {
+    let hashIndex = url.indexOf('#R');
+    if (hashIndex &gt; -1) {
+      // Exclude first 2 letters from hash (#R).
+      let hash = url.substring(hashIndex+2);
+      try {
+        let decodedData = decodeURIComponent(hash);
+        let graph = new Graph();
+        let rawDiagram = graph.decompress(decodedData);
+        return rawDiagram;
+      } catch (e) {
+        console.error(e.stack)
+      }
+    }
+    return null;
+  };
+
+  //
+  // Load the translation file and the default theme.
+  //
+  var loadTranslationAndTheme = function() {
+    var deferred = $.Deferred();
+    mxResources.loadDefaultBundle = false;
+    var bundle = mxResources.getDefaultBundle(RESOURCE_BASE, mxLanguage) ||
+      mxResources.getSpecialBundle(RESOURCE_BASE, mxLanguage);
+    // The theme is important because it controls how the shapes are rendered.
+    mxUtils.getAll([bundle, STYLE_PATH + '/default.xml'], function(response) {
+      // Adds bundle text to resources.
+      mxResources.parse(response[0].getText());
+      deferred.resolve(response[1].getDocumentElement());
+    }, function() {
+      // Failed to load the translation file or the theme.
+      deferred.reject();
+    });
+    return deferred.promise();
+  };
+
+  //
+  // Fix XWiki custom links in print preview.
+  //
+  var originalPrintPreviewAddGraphFragment = mxPrintPreview.prototype.addGraphFragment;
+  mxPrintPreview.prototype.addGraphFragment = function(dx, dy, scale, pageNumber, div, clip) {
+    var result = originalPrintPreviewAddGraphFragment.apply(this, arguments);
+    // Convert XWiki custom links to absolute URLs.
+    $(div).find('a').each(function() {
+      var link = $(this).attr('xlink:href');
+      if (diagramLinkHandler.isXWikiCustomLink(link)) {
+        var url = diagramLinkHandler.getURLFromCustomLink(link);
+        var absoluteURL = $('&lt;a/&gt;').attr('href', url).prop('href');
+        $(this).attr('xlink:href', absoluteURL);
+      }
+    });
+    return result;
+  };
+
+  return {
+    getDiagramXMLFromURL: getDiagramXMLFromURL,
+    loadTranslationAndTheme: loadTranslationAndTheme
+  };
 });</code>
     </property>
     <property>
       <name>Code used in both view and edit modes</name>
     </property>
     <property>
-      <parse>1</parse>
+      <parse>0</parse>
     </property>
     <property>
       <use>onDemand</use>

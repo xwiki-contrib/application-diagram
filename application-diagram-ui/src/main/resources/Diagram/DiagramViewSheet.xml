@@ -56,171 +56,18 @@
     {{html clean="false"}}
     ## Check if the query contains the parameter for getting the diagram from URL.
     &lt;div class="diagram loading"
+      data-diagram-config="$escapetool.xml($jsontool.serialize($diagramConfig))"
+      data-toolbar="$escapetool.xml($toolbar)"
       #if ("$!request.source" == '')
         data-model="$escapetool.xml($tdoc.content)"
         data-reference="$escapetool.xml($services.model.serialize($tdoc.documentReference, 'default'))"
         data-title="$escapetool.xml($tdoc.plainTitle)"
       #end
-      data-toolbar="$escapetool.xml($toolbar)"
     &gt;&lt;/div&gt;
     {{/html}}
   #end
 #end
 {{/velocity}}</content>
-  <object>
-    <name>Diagram.DiagramViewSheet</name>
-    <number>0</number>
-    <className>XWiki.JavaScriptExtension</className>
-    <guid>69dfd116-1fca-4adb-bc13-18701adf194c</guid>
-    <class>
-      <name>XWiki.JavaScriptExtension</name>
-      <customClass/>
-      <customMapping/>
-      <defaultViewSheet/>
-      <defaultEditSheet/>
-      <defaultWeb/>
-      <nameField/>
-      <validationScript/>
-      <cache>
-        <cache>0</cache>
-        <disabled>0</disabled>
-        <displayType>select</displayType>
-        <multiSelect>0</multiSelect>
-        <name>cache</name>
-        <number>5</number>
-        <prettyName>Caching policy</prettyName>
-        <relationalStorage>0</relationalStorage>
-        <separator> </separator>
-        <separators>|, </separators>
-        <size>1</size>
-        <unmodifiable>0</unmodifiable>
-        <values>long|short|default|forbid</values>
-        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
-      </cache>
-      <code>
-        <contenttype>PureText</contenttype>
-        <disabled>0</disabled>
-        <editor>PureText</editor>
-        <name>code</name>
-        <number>2</number>
-        <prettyName>Code</prettyName>
-        <rows>20</rows>
-        <size>50</size>
-        <unmodifiable>0</unmodifiable>
-        <classType>com.xpn.xwiki.objects.classes.TextAreaClass</classType>
-      </code>
-      <name>
-        <disabled>0</disabled>
-        <name>name</name>
-        <number>1</number>
-        <prettyName>Name</prettyName>
-        <size>30</size>
-        <unmodifiable>0</unmodifiable>
-        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
-      </name>
-      <parse>
-        <disabled>0</disabled>
-        <displayFormType>select</displayFormType>
-        <displayType>yesno</displayType>
-        <name>parse</name>
-        <number>4</number>
-        <prettyName>Parse content</prettyName>
-        <unmodifiable>0</unmodifiable>
-        <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
-      </parse>
-      <use>
-        <cache>0</cache>
-        <disabled>0</disabled>
-        <displayType>select</displayType>
-        <multiSelect>0</multiSelect>
-        <name>use</name>
-        <number>3</number>
-        <prettyName>Use this extension</prettyName>
-        <relationalStorage>0</relationalStorage>
-        <separator> </separator>
-        <separators>|, </separators>
-        <size>1</size>
-        <unmodifiable>0</unmodifiable>
-        <values>currentPage|onDemand|always</values>
-        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
-      </use>
-    </class>
-    <property>
-      <cache>long</cache>
-    </property>
-    <property>
-      <code>/*
-#set ($minify = $services.debug.minify != false)
-#set ($suffix = "#if ($minify).min#end")
-*/
-// mxGraph Client Configuration
-var mxBasePath = "$services.webjars.url('org.xwiki.contrib:mxgraph-client', '')";
-var mxLanguage = '$xcontext.locale';
-
-var mxGraphEditorBasePath = "$services.webjars.url('org.xwiki.contrib:mxgraph-editor', '')";
-
-// Diagram Viewer Configuration
-var diagramViewerBasePath = "$services.webjars.url('org.xwiki.contrib:draw.io', '')";
-var RESOURCES_PATH = diagramViewerBasePath + 'resources';
-var RESOURCE_BASE = RESOURCES_PATH + '/dia';
-var STENCIL_PATH = diagramViewerBasePath + 'stencils';
-var IMAGE_PATH = diagramViewerBasePath + 'images';
-var STYLE_PATH = CSS_PATH = diagramViewerBasePath + 'styles';
-var SHAPES_PATH = diagramViewerBasePath + 'shapes';
-var GRAPH_IMAGE_PATH = diagramViewerBasePath + 'img';
-
-var urlParams = {};
-
-require.config({
-  paths: {
-    'mxgraph-init': diagramViewerBasePath + 'js/draw.io.init$suffix',
-    'mxgraph-client': mxBasePath + 'mxClient.bundle$suffix',
-    'sanitizer': mxGraphEditorBasePath + 'sanitizer/sanitizer.min',
-    'mxgraph-viewer': mxGraphEditorBasePath + 'mxGraphViewer$suffix',
-    'pako': mxGraphEditorBasePath + 'deflate/pako.min',
-    // Used by the lightbox.
-    'spin': diagramViewerBasePath + 'js/spin/spin.min',
-    'draw.io.viewer': diagramViewerBasePath + 'js/draw.io.viewer$suffix',
-    'xwiki-utils': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify'),
-    'diagram-utils': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify'),
-    'diagram-link-handler': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify'),
-    'diagram-graph-xml-filter': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$minify')
-  },
-  shim: {
-    'mxgraph-client': ['mxgraph-init'],
-    'mxgraph-viewer': ['mxgraph-client', 'sanitizer'],
-    'draw.io.viewer': ['mxgraph-viewer', 'pako-global', 'spin-global'],
-  },
-  map: {
-    'diagram-utils': {
-      'mxgraph-common': 'mxgraph-viewer'
-    },
-    'diagram-link-handler': {
-      'draw.io.common': 'draw.io.viewer'
-    }
-  }
-});
-
-define('pako-global', ['pako'], function(pako) {
-  // draw.io expects a global variable.
-  window.pako = pako;
-});
-
-define('spin-global', ['spin'], function(spin) {
-  // draw.io expects a global variable.
-  window.Spinner = spin;
-});</code>
-    </property>
-    <property>
-      <name>Configuration</name>
-    </property>
-    <property>
-      <parse>1</parse>
-    </property>
-    <property>
-      <use>onDemand</use>
-    </property>
-  </object>
   <object>
     <name>Diagram.DiagramViewSheet</name>
     <number>1</number>
@@ -486,9 +333,25 @@ define('spin-global', ['spin'], function(spin) {
       <cache>long</cache>
     </property>
     <property>
-      <code>require(['jquery', 'diagram-viewer'], function($, diagramViewerPromise) {
-  diagramViewerPromise.done(function() {
-    $('.diagram').viewDiagram();
+      <code>require.config({
+  paths: {
+    'diagram-setup': new XWiki.Document('DiagramSheet', 'Diagram').getURL('jsx', 'minify=$!services.debug.minify')
+  },
+  map: {
+    'diagram-utils': {
+      'mxgraph-common': 'mxgraph-viewer'
+    },
+    'diagram-link-handler': {
+      'draw.io.common': 'draw.io.viewer'
+    }
+  }
+});
+
+require(['diagram-setup'], function() {
+  require(['jquery', 'diagram-viewer'], function($, diagramViewerPromise) {
+    diagramViewerPromise.done(function() {
+      $('.diagram').viewDiagram();
+    });
   });
 });</code>
     </property>
