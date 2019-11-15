@@ -46,7 +46,8 @@
     "locale": $xcontext.locale,
     "mxGraphClientBasePath": $services.webjars.url('org.xwiki.contrib:mxgraph-client', ''),
     "mxGraphEditorBasePath": $services.webjars.url('org.xwiki.contrib:mxgraph-editor', ''),
-    "drawIOBasePath": $services.webjars.url('org.xwiki.contrib:draw.io', '')
+    "drawIOBasePath": $services.webjars.url('org.xwiki.contrib:draw.io', ''),
+    "exportURL": $xwiki.getDocument('Diagram.DiagramConfig').getValue('exportURL')
   })
   #if ($xcontext.action == 'edit')
     {{include reference="Diagram.DiagramEditSheet" /}}
@@ -218,6 +219,7 @@ define('diagram-setup', ['diagram-config'], function(diagramConfig) {
   window.SHAPES_PATH = drawIOBasePath + 'shapes';
   window.GRAPH_IMAGE_PATH = drawIOBasePath + 'img';
   window.TEMPLATE_PATH = drawIOBasePath + 'templates';
+  window.EXPORT_URL = diagramConfig.exportURL;
   window.PROXY_URL = new XWiki.Document('DiagramProxy', 'Diagram').getURL('get');
   window.isLocalStorage = true;
 

@@ -40,6 +40,11 @@
     <xwiki.extension.licensing.publicDocuments>
       Diagram.WebHome
     </xwiki.extension.licensing.publicDocuments>
+    <!-- The list of documents that are not covered by the extension license. The user that installs the extension has
+      full access to these documents (view, edit, delete) without having a license, so use this property wisely. -->
+    <xwiki.extension.licensing.excludedDocuments>
+      Diagram.DiagramConfig
+    </xwiki.extension.licensing.excludedDocuments>
     <xwiki.extension.name>Diagram Application (Pro)</xwiki.extension.name>
     <xwiki.extension.category>application</xwiki.extension.category>
   </properties>
