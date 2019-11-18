@@ -40,6 +40,13 @@
       <artifactId>draw.io-api</artifactId>
       <version>${draw.io.version}</version>
     </dependency>
+    <!-- We load the default style sheet and the stencils from the draw.io WebJar -->
+    <dependency>
+      <groupId>org.xwiki.contrib</groupId>
+      <artifactId>draw.io</artifactId>
+      <version>${draw.io.version}</version>
+      <scope>runtime</scope>
+    </dependency>
     <dependency>
       <groupId>org.xwiki.commons</groupId>
       <artifactId>xwiki-commons-script</artifactId>

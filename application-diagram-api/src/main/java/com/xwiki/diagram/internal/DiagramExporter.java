@@ -146,5 +146,11 @@ public class DiagramExporter
         }
         graph.setEnabled(false);
         graph.setHtmlLabels(true);
+
+        // Loads the default style sheet from an external file.
+        // mxCodec codec = new mxCodec();
+        // org.w3c.dom.Document document = mxUtils.loadDocument(this.getClass()
+        // .getResource("/META-INF/resources/webjars/draw.io/12.2.2-SNAPSHOT/styles/default.xml").toString());
+        // codec.decode(document.getDocumentElement(), graph.getStylesheet());
     }
 }
