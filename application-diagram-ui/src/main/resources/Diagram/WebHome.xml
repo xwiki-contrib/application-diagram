@@ -41,13 +41,6 @@
   <hidden>false</hidden>
   <content>{{include reference="Licenses.Code.VelocityMacros"/}}
 
-{{velocity}}
-#if ($services.licensing.licensor.hasLicensureForEntity(
-    $services.model.createDocumentReference('', 'Diagram', 'DiagramClass')))
-  {{include reference="Diagram.MigrationScriptMacros"/}}
-#end
-{{/velocity}}
-
 {{velocity output="false"}}
 #macro (diagramLiveTable)
   #set ($columnsProperties = {
@@ -72,15 +65,7 @@
 {{velocity}}
 #if ($services.licensing.licensor.hasLicensureForEntity(
     $services.model.createDocumentReference('', 'Diagram', 'DiagramClass')))
-  #selectDiagramsRequiringMigration()
-  #if ($toBeMigratedEntries &amp;&amp; $toBeMigratedEntries.size() &gt; 0)
-    {{warning}}
-    {{html clean="false"}}
-    $services.localization.render("diagram.migration.warning", [$toBeMigratedEntries.size(), "&lt;a href='$xwiki.getURL('Diagram.MigrationScript')'&gt;", '&lt;/a&gt;'])
-    {{/html}}
-    {{/warning}}
-  #end
-  #diagramLiveTable
+  #diagramLiveTable()
 #else
   {{error}}#getMissingLicenseMessage('diagram.extension.name'){{/error}}
 #end

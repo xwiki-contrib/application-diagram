@@ -21,22 +21,16 @@ package com.xwiki.diagram.internal;
 
 import java.io.ByteArrayInputStream;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.stream.Collectors;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import org.slf4j.Logger;
 import org.xwiki.component.annotation.Component;
 import org.xwiki.model.reference.DocumentReference;
-import org.xwiki.model.reference.DocumentReferenceResolver;
 import org.xwiki.model.reference.LocalDocumentReference;
 import org.xwiki.model.reference.WikiReference;
 import org.xwiki.query.Query;
 import org.xwiki.query.QueryException;
-import org.xwiki.query.QueryManager;
 
 import com.xpn.xwiki.XWikiContext;
 import com.xpn.xwiki.doc.XWikiAttachment;
@@ -50,50 +44,17 @@ import com.xpn.xwiki.objects.BaseProperty;
  * @version $Id$
  * @since 1.11
  */
-@Component(roles = StoreSVGAsAttachmentMigrator.class)
+@Component(roles = StoreSVGAsAttachmentMigration.class)
 @Singleton
-public class StoreSVGAsAttachmentMigrator
+public class StoreSVGAsAttachmentMigration extends AbstractDiagramMigration
 {
     private static final LocalDocumentReference DIAGRAM_CLASS_REFERENCE =
         new LocalDocumentReference("Diagram", "DiagramClass");
 
     private static final String DIAGRAM_ATTACHMENT_NAME = "diagram.svg";
 
-    @Inject
-    private Logger logger;
-
-    @Inject
-    private QueryManager queryManager;
-
-    @Inject
-    private DocumentReferenceResolver<String> documentReferenceResolver;
-
-    @Inject
-    private Provider<XWikiContext> xcontextProvider;
-
-    /**
-     * Iterates over all the diagram pages from the specified wiki and moves the diagram SVG from the diagram object to
-     * an attachment named {@code diagram.svg} on the same page.
-     * 
-     * @param wiki the wiki where to run the migration
-     * @return the collection of diagram pages that have been migrated
-     */
-    public Collection<DocumentReference> migrate(String wiki)
-    {
-        try {
-            return getDocumentsToMigrate(wiki).stream().filter(this::migrate).collect(Collectors.toList());
-        } catch (QueryException e) {
-            this.logger.error("Failed to get the list of diagram documents to migrate.", e);
-            return Collections.emptyList();
-        }
-    }
-
-    /**
-     * @param wiki the wiki where to look for diagram documents to migrate
-     * @return the list of diagram documents from the specified wiki that still have the {@code svg} property
-     * @throws QueryException if executing the query fails
-     */
-    private Collection<DocumentReference> getDocumentsToMigrate(String wiki) throws QueryException
+    @Override
+    protected Collection<DocumentReference> getDiagramsToMigrate(String wiki) throws QueryException
     {
         // Look for the diagram documents that still have the "svg" property.
         String statement = ", BaseObject as obj, LargeStringProperty as prop "
@@ -107,17 +68,12 @@ public class StoreSVGAsAttachmentMigrator
             .collect(Collectors.toList());
     }
 
-    /**
-     * Moves the diagram SVG from the diagram object to an attachment named {@code diagram.svg} on the same page.
-     * 
-     * @param documentReference the document to migrate
-     * @return {@code true} if the specified document was migrated, {@code false} otherwise
-     */
-    private boolean migrate(DocumentReference documentReference)
+    @Override
+    protected boolean migrate(DocumentReference diagramReference)
     {
         try {
             XWikiContext xcontext = this.xcontextProvider.get();
-            XWikiDocument document = xcontext.getWiki().getDocument(documentReference, xcontext);
+            XWikiDocument document = xcontext.getWiki().getDocument(diagramReference, xcontext);
             // We don't overwrite the existing attachment because it may contain a more recent version of the diagram.
             XWikiAttachment attachment = document.getAttachment(DIAGRAM_ATTACHMENT_NAME);
             if (attachment == null) {
@@ -133,7 +89,7 @@ public class StoreSVGAsAttachmentMigrator
                 }
             }
         } catch (Exception e) {
-            this.logger.error("Failed to migrate diagram [{}].", documentReference, e);
+            this.logger.error("Failed to migrate diagram [{}].", diagramReference, e);
         }
         return false;
     }

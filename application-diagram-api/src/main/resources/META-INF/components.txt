@@ -1,2 +1,3 @@
 com.xwiki.diagram.internal.DiagramApplicationListener
-com.xwiki.diagram.internal.StoreSVGAsAttachmentMigrator
+com.xwiki.diagram.internal.DrawIOImagePathMigration
+com.xwiki.diagram.internal.StoreSVGAsAttachmentMigration

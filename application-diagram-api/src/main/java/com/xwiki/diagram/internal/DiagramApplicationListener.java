@@ -52,7 +52,10 @@ public class DiagramApplicationListener extends AbstractEventListener
     private Logger logger;
 
     @Inject
-    private StoreSVGAsAttachmentMigrator svgMigrator;
+    private StoreSVGAsAttachmentMigration svgMigrator;
+
+    @Inject
+    private DrawIOImagePathMigration imagePathMigrator;
 
     @Inject
     private WikiDescriptorManager wikiDescriptorManager;
@@ -72,7 +75,7 @@ public class DiagramApplicationListener extends AbstractEventListener
         if (event instanceof ExtensionUpgradedEvent) {
             ExtensionEvent extensionEvent = (ExtensionEvent) event;
             if ("com.xwiki.diagram:application-diagram".equals(extensionEvent.getExtensionId().getId())) {
-                getTargetWikis(extensionEvent).forEach(this.svgMigrator::migrate);
+                getTargetWikis(extensionEvent).forEach(this::migrate);
             }
         }
     }
@@ -89,5 +92,11 @@ public class DiagramApplicationListener extends AbstractEventListener
                 return Collections.emptySet();
             }
         }
+    }
+
+    private void migrate(String wiki)
+    {
+        this.svgMigrator.migrate(wiki);
+        this.imagePathMigrator.migrate(wiki);
     }
 }

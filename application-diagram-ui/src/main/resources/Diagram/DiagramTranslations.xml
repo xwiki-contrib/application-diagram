@@ -75,10 +75,7 @@ diagram.editor.saveAsImageAttachmentError=Error when saving the diagram as an im
 
 # Diagram Configuration
 Diagram.DiagramConfigClass_exportURL=Export URL
-Diagram.DiagramConfigClass_exportURL_hint=The URL used to export the diagrams as image or PDF.
-
-# Diagram migrator
-diagram.migration.warning={0} {0,choice,1#diagram requires|1&lt;diagrams require} a migration. Please click {1}here{2} to proceed.</content>
+Diagram.DiagramConfigClass_exportURL_hint=The URL used to export the diagrams as image or PDF.</content>
   <object>
     <name>Diagram.DiagramTranslations</name>
     <number>0</number>
