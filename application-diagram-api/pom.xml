@@ -31,6 +31,9 @@
   <name>Diagram Application (Pro) - API</name>
   <packaging>jar</packaging>
   <description>Provides script APIs for the Diagram application.</description>
+  <properties>
+    <xwiki.jacoco.instructionRatio>0.17</xwiki.jacoco.instructionRatio>
+  </properties>
   <dependencies>
     <dependency>
       <groupId>org.xwiki.contrib</groupId>
