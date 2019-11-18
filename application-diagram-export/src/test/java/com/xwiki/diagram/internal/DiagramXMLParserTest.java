@@ -28,6 +28,7 @@ import org.xwiki.test.mockito.MockitoComponentMockingRule;
 
 import com.mxgraph.util.mxRectangle;
 import com.mxgraph.view.mxGraph;
+import com.xwiki.diagram.export.internal.DiagramXMLParser;
 
 import static org.junit.Assert.assertEquals;
 

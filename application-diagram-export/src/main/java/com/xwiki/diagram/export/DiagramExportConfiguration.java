@@ -17,7 +17,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package com.xwiki.diagram;
+package com.xwiki.diagram.export;
 
 import javax.inject.Singleton;
 
@@ -25,15 +25,15 @@ import org.xwiki.component.annotation.Component;
 import org.xwiki.stability.Unstable;
 
 /**
- * Configuration properties for the Diagram application.
+ * Configuration properties that control how diagrams are exported.
  * 
  * @version $Id$
  * @since 1.11
  */
-@Component(roles = DiagramConfiguration.class)
+@Component(roles = DiagramExportConfiguration.class)
 @Singleton
 @Unstable
-public class DiagramConfiguration
+public class DiagramExportConfiguration
 {
     /**
      * @return the maximum size (in bytes) for export request payloads, 10485760 (10MB) by default

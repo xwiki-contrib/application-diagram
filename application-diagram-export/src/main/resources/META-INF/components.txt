@@ -1,0 +1,6 @@
+com.xwiki.diagram.export.internal.DiagramExporter
+com.xwiki.diagram.export.internal.DiagramExportRequestFactory
+com.xwiki.diagram.export.internal.DiagramXMLParser
+com.xwiki.diagram.export.internal.HTTPDiagramExporter
+com.xwiki.diagram.export.script.DiagramExporterScriptService
+com.xwiki.diagram.export.DiagramExportConfiguration

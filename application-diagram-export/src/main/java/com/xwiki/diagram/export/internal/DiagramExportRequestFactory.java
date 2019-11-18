@@ -17,7 +17,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package com.xwiki.diagram.internal;
+package com.xwiki.diagram.export.internal;
 
 import java.awt.Color;
 import java.io.UnsupportedEncodingException;
@@ -35,7 +35,7 @@ import org.xwiki.model.reference.DocumentReferenceResolver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mxgraph.util.mxUtils;
-import com.xwiki.diagram.DiagramConfiguration;
+import com.xwiki.diagram.export.DiagramExportConfiguration;
 
 /**
  * Collects the data needed to perform a diagram export.
@@ -50,7 +50,7 @@ public class DiagramExportRequestFactory
     private static final String UTF8 = "UTF-8";
 
     @Inject
-    private DiagramConfiguration configuration;
+    private DiagramExportConfiguration configuration;
 
     @Inject
     @Named("current")

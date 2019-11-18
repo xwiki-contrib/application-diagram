@@ -17,7 +17,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package com.xwiki.diagram.script;
+package com.xwiki.diagram.export.script;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -38,10 +38,10 @@ import org.xwiki.security.authorization.ContextualAuthorizationManager;
 import org.xwiki.security.authorization.Right;
 import org.xwiki.stability.Unstable;
 
-import com.xwiki.diagram.DiagramConfiguration;
-import com.xwiki.diagram.internal.DiagramExportRequest;
-import com.xwiki.diagram.internal.DiagramExportRequestFactory;
-import com.xwiki.diagram.internal.HTTPDiagramExporter;
+import com.xwiki.diagram.export.DiagramExportConfiguration;
+import com.xwiki.diagram.export.internal.DiagramExportRequest;
+import com.xwiki.diagram.export.internal.DiagramExportRequestFactory;
+import com.xwiki.diagram.export.internal.HTTPDiagramExporter;
 
 /**
  * Script services for the Diagram application.
@@ -50,16 +50,16 @@ import com.xwiki.diagram.internal.HTTPDiagramExporter;
  * @since 1.11
  */
 @Component
-@Named("diagram")
+@Named("diagram.exporter")
 @Singleton
 @Unstable
-public class DiagramScriptService implements ScriptService
+public class DiagramExporterScriptService implements ScriptService
 {
     @Inject
     private Logger logger;
 
     @Inject
-    private DiagramConfiguration configuration;
+    private DiagramExportConfiguration configuration;
 
     @Inject
     private HTTPDiagramExporter diagramExporter;
