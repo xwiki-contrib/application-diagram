@@ -31,25 +31,22 @@
   <name>Diagram Application (Pro) - API</name>
   <packaging>jar</packaging>
   <description>Provides script APIs for the Diagram application.</description>
-  <properties>
-    <xwiki.jacoco.instructionRatio>0.17</xwiki.jacoco.instructionRatio>
-  </properties>
   <dependencies>
     <dependency>
-      <groupId>org.xwiki.contrib</groupId>
-      <artifactId>draw.io-api</artifactId>
-      <version>${draw.io.version}</version>
-    </dependency>
-    <!-- We load the default style sheet and the stencils from the draw.io WebJar -->
-    <dependency>
-      <groupId>org.xwiki.contrib</groupId>
-      <artifactId>draw.io</artifactId>
-      <version>${draw.io.version}</version>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
       <groupId>org.xwiki.commons</groupId>
-      <artifactId>xwiki-commons-script</artifactId>
+      <artifactId>xwiki-commons-component-api</artifactId>
+      <version>${commons.version}</version>
+    </dependency>
+    <dependency>
+      <!-- We have an event listener that triggers the migrations. -->
+      <groupId>org.xwiki.commons</groupId>
+      <artifactId>xwiki-commons-observation-api</artifactId>
+      <version>${commons.version}</version>
+    </dependency>
+    <dependency>
+      <!-- We listen to ExtensionUpgradedEvent in order to run the migrations. -->
+      <groupId>org.xwiki.commons</groupId>
+      <artifactId>xwiki-commons-extension-api</artifactId>
       <version>${commons.version}</version>
     </dependency>
     <dependency>
@@ -58,24 +55,22 @@
       <version>${platform.version}</version>
     </dependency>
     <dependency>
+      <!-- We need to get the list of wikis when the Diagram application is upgraded on farm. -->
       <groupId>org.xwiki.platform</groupId>
-      <artifactId>xwiki-platform-bridge</artifactId>
+      <artifactId>xwiki-platform-wiki-api</artifactId>
       <version>${platform.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
+      <!-- We need to query the diagram documents that need to be migrated. -->
+      <groupId>org.xwiki.platform</groupId>
+      <artifactId>xwiki-platform-query-manager</artifactId>
+      <version>${platform.version}</version>
     </dependency>
     <dependency>
-      <groupId>javax.servlet</groupId>
-      <artifactId>javax.servlet-api</artifactId>
-    </dependency>
-    <!-- Test dependencies -->
-    <dependency>
-      <groupId>org.xwiki.commons</groupId>
-      <artifactId>xwiki-commons-tool-test-component</artifactId>
-      <version>${commons.version}</version>
-      <scope>test</scope>
+      <!-- Required to migrate the diagram documents. -->
+      <groupId>org.xwiki.platform</groupId>
+      <artifactId>xwiki-platform-oldcore</artifactId>
+      <version>${platform.version}</version>
     </dependency>
   </dependencies>
 </project>

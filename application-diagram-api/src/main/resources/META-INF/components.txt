@@ -1,6 +1,2 @@
-com.xwiki.diagram.internal.DiagramExporter
-com.xwiki.diagram.internal.DiagramExportRequestFactory
-com.xwiki.diagram.internal.DiagramXMLParser
-com.xwiki.diagram.internal.HTTPDiagramExporter
-com.xwiki.diagram.script.DiagramScriptService
-com.xwiki.diagram.DiagramConfiguration
+com.xwiki.diagram.internal.DiagramApplicationListener
+com.xwiki.diagram.internal.StoreSVGAsAttachmentMigrator
