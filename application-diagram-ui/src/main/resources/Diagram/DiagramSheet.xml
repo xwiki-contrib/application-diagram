@@ -219,6 +219,8 @@ define('diagram-setup', ['diagram-config'], function(diagramConfig) {
   window.SHAPES_PATH = drawIOBasePath + 'shapes';
   window.GRAPH_IMAGE_PATH = drawIOBasePath + 'img';
   window.TEMPLATE_PATH = drawIOBasePath + 'templates';
+  // This is used by File &gt; Open Library from &gt; Browser...
+  window.OPEN_FORM = drawIOBasePath + 'open.html';
   window.EXPORT_URL = diagramConfig.exportURL;
   window.PROXY_URL = new XWiki.Document('DiagramProxy', 'Diagram').getURL('get');
   window.isLocalStorage = true;
@@ -256,6 +258,8 @@ define('diagram-setup', ['diagram-config'], function(diagramConfig) {
   // Disabling the integration with these external services is not enough because the draw.io code has hard-coded
   // references.
   window.DriveFile = window.DropboxFile = window.GitHubFile = window.OneDriveFile = window.TrelloFile = false;
+  window.DriveLibrary = window.DropboxLibrary = window.GitHubLibrary = window.OneDriveLibrary = window.TrelloLibrary
+    = false;
 
   var suffix = diagramConfig.debug ? '' : '.min';
   var mxGraphEditorBasePath = diagramConfig.mxGraphEditorBasePath;
