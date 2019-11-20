@@ -471,14 +471,158 @@ define('diagram-link-editor', ['jquery', 'diagram-link-handler', 'draw.io', 'res
   };
 });
 
+/**
+ * Adds support for using XWiki image attachments in diagrams.
+ */
+define('diagram-image-editor', ['xwiki-utils', 'diagram-link-handler', 'draw.io'], function(xutils, diagramLinkHandler) {
+  // Fix the base URL used when exporting the diagram as image.
+  var originalCreateImageUrlConverter = EditorUi.prototype.createImageUrlConverter;
+  EditorUi.prototype.createImageUrlConverter = function() {
+    var converter = originalCreateImageUrlConverter.call(this);
+    converter.convert = function(src) {
+      // Use baseDomain instead of baseUrl to detect external URLs.
+      if (src &amp;&amp; (src.substr(0, 7) === 'http://' || src.substr(0, 8) === 'https://') &amp;&amp;
+          src.substr(0, converter.baseDomain.length) !== converter.baseDomain) {
+        src = PROXY_URL + '?url=' + encodeURIComponent(src);
+      }
+      return src;
+    };
+    return converter;
+  };
+
+  // Override for uploading the image as attachment instead of encode it to Base64.
+  var originalImportFiles = EditorUi.prototype.importFiles;
+  EditorUi.prototype.importFiles = function(files, x, y, maxSize, fn, resultFn, filterFn, barrierFn, resizeDialog,
+      maxBytes, resampleThreshold, ignoreEmbeddedXml) {
+    let importFilesArgs = arguments;
+    if (fn) {
+      let editorUi = this;
+      importFilesArgs = Array.prototype.slice.call(arguments);
+      // This is the call back function responsible to insert the image.
+      importFilesArgs[4] = function(data, mimeType, x, y, w, h, filename) {
+        if (data.substring(0, 5) == 'data:') {
+          let fnArgs = Array.prototype.slice.call(arguments);
+          let fileBase64Data = data.substring(data.indexOf(',') + 1);
+          xutils.uploadAttachment(editorUi.base64ToBlob(fileBase64Data, mimeType), filename).done(function() {
+            // Include the attachment reference in the URL using the fragment identifier in order to be able to use it
+            // when saving the diagram (we want to save the attachment reference not the attachment URL).
+            let resourceReference = {
+              type: 'attach',
+              reference: XWiki.Model.serialize(new XWiki.AttachmentReference(filename))
+            };
+            let customLink = diagramLinkHandler.getCustomLinkFromResourceReference(resourceReference);
+            fnArgs[0] = xutils.getAttachmentURL(filename) + '#' + encodeURIComponent(customLink);
+            fn.apply(this, fnArgs);
+          });
+        } else {
+          fn.apply(this, arguments);
+        }
+      };
+    }
+    originalImportFiles.apply(this, importFilesArgs);
+  };
+
+  // Add support for inserting images by specifying the XWiki attachment reference.
+  var originalShowImageDialog = EditorUi.prototype.showImageDialog;
+  EditorUi.prototype.showImageDialog = function(title, value, fn, ignoreExisting, convertDataUri) {
+    var showImageDialogArgs = Array.prototype.slice.call(arguments);
+    var customLink = diagramLinkHandler.getCustomLinkFromURL(value);
+    if (customLink) {
+      // Edit the XWiki custom link instead of the actual URL.
+      showImageDialogArgs[1] = customLink;
+    }
+    if (typeof fn === 'function') {
+      showImageDialogArgs[2] = function(newValue, width, height) {
+        var fnArgs = Array.prototype.slice.call(arguments);
+        if (diagramLinkHandler.isXWikiCustomLink(newValue)) {
+          // Save the actual URL, but keep the custom link as fragment identifier.
+          fnArgs[0] = diagramLinkHandler.getURLFromCustomLink(newValue) + '#' + encodeURIComponent(newValue);
+        }
+        fn.apply(this, fnArgs);
+      };
+    }
+    originalShowImageDialog.apply(this, showImageDialogArgs);
+  };
+
+  // This function is used by the image dialog to preload the images before inserting them. We have to overwrite it in
+  // order to make it use the actual URL for XWiki image attachments.
+  var originalLoadImage = EditorUi.prototype.loadImage;
+  EditorUi.prototype.loadImage = function(uri, onload, onerror) {
+    var loadImageArgs = Array.prototype.slice.call(arguments);
+    if (diagramLinkHandler.isXWikiCustomLink(uri)) {
+      loadImageArgs[0] = diagramLinkHandler.getURLFromCustomLink(uri);
+    }
+    originalLoadImage.apply(this, loadImageArgs);
+  };
+});
+
+/**
+ * Customizes the diagram export as URL and the diagram import from URL.
+ */
+define('diagram-url-io', ['diagram-utils', 'draw.io'], function(diagramUtils) {
+  var urlParam = function(parameter, url) {
+    var results = new RegExp('[\?&amp;]' + parameter + '=([^&amp;#]*)').exec(url);
+    if (results === null) {
+       return null;
+    }
+    return decodeURIComponent(results[1]);
+  };
+
+  var getParameterValueFromURL = function(parameter, url) {
+    if (typeof URLSearchParams === 'function') {
+      return new URL(url, window.location.href).searchParams.get(parameter);
+    }
+    // IE will get here since it's not supporting URLSearchParams.
+    return urlParam(parameter, url);
+  };
+
+  // Custom diagram import from URL.
+  var originalLoadUrl = EditorUi.prototype.loadUrl;
+  EditorUi.prototype.loadUrl = function(url, success, error, forceBinary, retry, dataUriPrefix) {
+    let exportedUrl = getParameterValueFromURL('url', url);
+    if (exportedUrl) {
+      let diagramXML = diagramUtils.getDiagramXMLFromURL(exportedUrl);
+      if (diagramXML) {
+        return success(diagramXML);
+      }
+    }
+    return originalLoadUrl.apply(this, arguments);
+  };
+
+  // Custom diagram export as URL (using the current host).
+  var originalCreateLink = EditorUi.prototype.createLink;
+  EditorUi.prototype.createLink = function() {
+    let rawURL = originalCreateLink.apply(this, arguments);
+    // Do not include '#' because it's automatically added by getURL function below.
+    let documentFragmentIndex = rawURL.indexOf('#');
+    let documentFragment = rawURL.substring(documentFragmentIndex + 1);
+    if (documentFragment.substring(0, 1) == 'R') {
+      let queryString = '';
+      let queryStringIndex = rawURL.indexOf('?');
+      if (queryStringIndex &gt; -1) {
+        queryString = rawURL.substring (queryStringIndex + 1, documentFragmentIndex);
+      }
+      // Append source parameter to the query
+      queryString += '&amp;source=url';
+      return window.location.protocol + '//' + window.location.host +
+        new XWiki.Document('DiagramViewSheet', 'Diagram').getURL('view', queryString, documentFragment);
+    }
+    return rawURL;
+  }
+});
+
+/**
+ * Integrates draw.io diagram editor in XWiki.
+ */
 define('diagram-editor', [
   'jquery',
   'diagram-store',
   'diagram-utils',
-  'xwiki-utils',
+  'diagram-graph-xml-filter',
   'diagram-link-editor',
-  'diagram-graph-xml-filter'
-], function($, diagramStore, diagramUtils, xutils) {
+  'diagram-image-editor',
+  'diagram-url-io'
+], function($, diagramStore, diagramUtils) {
 
   // These variables are used to decide if an image should be uploaded at original resolution or
   // should be declined for being too big.
@@ -596,95 +740,6 @@ define('diagram-editor', [
       }
     });
   };
-
-  // Fix the base URL used when exporting the diagram as image.
-  var originalCreateImageUrlConverter = EditorUi.prototype.createImageUrlConverter;
-  EditorUi.prototype.createImageUrlConverter = function() {
-    var converter = originalCreateImageUrlConverter.call(this);
-    converter.convert = function(src) {
-      // Use baseDomain instead of baseUrl to detect external URLs.
-      if (src &amp;&amp; (src.substr(0, 7) === 'http://' || src.substr(0, 8) === 'https://') &amp;&amp;
-          src.substr(0, converter.baseDomain.length) !== converter.baseDomain) {
-        src = PROXY_URL + '?url=' + encodeURIComponent(src);
-      }
-      return src;
-    };
-    return converter;
-  };
-
-  // Override for uploading the image as attachment instead of encode it to Base64.
-  var originalImportFiles = EditorUi.prototype.importFiles;
-  EditorUi.prototype.importFiles = function(files, x, y, maxSize, fn, resultFn, filterFn, barrierFn, resizeDialog,
-                                             maxBytes, resampleThreshold, ignoreEmbeddedXml) {
-    var newArgs = arguments;
-    if (fn) {
-      var newArgs = Array.prototype.slice.call(arguments);
-      newArgs[4] = function(data, mimeType, x, y, w, h) {
-        if (data.substring(0, 5) == 'data:') {
-          let currentFile = files[0];
-          xutils.uploadAttachment(currentFile, currentFile.name).done(function() {
-            let doc = XWiki.currentDocument;
-            let xwikiURL = xutils.getAttachmentURL(currentFile.name);
-            fn.apply(this, [xwikiURL, mimeType, x, y, w, h]);
-          });
-        } else {
-          fn.apply(this, arguments);
-        }
-      }
-    }
-    originalImportFiles.apply(this, newArgs);
-  }
-
-  var urlParam = function(parameter, url) {
-    var results = new RegExp('[\?&amp;]' + parameter + '=([^&amp;#]*)').exec(url);
-    if (results === null) {
-       return null;
-    }
-    return decodeURIComponent(results[1]);
-  };
-
-  var getParameterValueFromURL = function(parameter, url) {
-    if (typeof URLSearchParams === 'function') {
-      return new URL(url, window.location.href).searchParams.get(parameter);
-    }
-    // IE will get here since it's not supporting URLSearchParams.
-    return urlParam(parameter, url);
-  };
-
-  var originalLoadUrl = EditorUi.prototype.loadUrl;
-  EditorUi.prototype.loadUrl = function(url, success, error, forceBinary, retry, dataUriPrefix) {
-    let exportedUrl = getParameterValueFromURL('url', url);
-    if (exportedUrl) {
-      let diagramXML = diagramUtils.getDiagramXMLFromURL(exportedUrl);
-      if (diagramXML) {
-        return success(diagramXML);
-      }
-    }
-    return originalLoadUrl.apply(this, arguments);
-  };
-
-  //
-  // Change the URL generated by export for containing the actual host.
-  //
-  var originalCreateLink = EditorUi.prototype.createLink;
-  EditorUi.prototype.createLink = function() {
-    let rawURL = originalCreateLink.apply(this, arguments);
-    // Do not include '#' because it's automatically added by getURL function below.
-    let documentFragmentIndex = rawURL.indexOf('#');
-    let documentFragment = rawURL.substring(documentFragmentIndex + 1);
-    if (documentFragment.substring(0, 1) == 'R') {
-      let queryString = '';
-      let queryStringIndex = rawURL.indexOf('?');
-      if (queryStringIndex &gt; -1) {
-        queryString = rawURL.substring (queryStringIndex + 1, documentFragmentIndex);
-      }
-      // Append source parameter to the query
-      queryString += '&amp;source=url';
-      return window.location.protocol + '//' + window.location.host +
-        new XWiki.Document('DiagramViewSheet', 'Diagram').getURL('view', queryString, documentFragment);
-    }
-    return rawURL;
-  }
 
   //
   // Fix the side bar tool tip: the tool tip position is computed as if the editor takes the full screen.

@@ -385,10 +385,37 @@ define('diagram-link-handler', ['xwiki-utils', 'draw.io.common'], function(xutil
     }
   };
 
+  var getFragmentIdentifierFromURL = function(url) {
+    if (typeof url === 'string' &amp;&amp; url.substring(0, 5) !== 'data:') {
+      fragmentIdentifierPosition = url.indexOf('#');
+      if (fragmentIdentifierPosition &gt;= 0) {
+        var fragmentIdentifier = url.substring(fragmentIdentifierPosition + 1);
+        try {
+          return decodeURIComponent(fragmentIdentifier);
+        } catch (e) {
+          // Malformed URI sequence. Return the fragment identifier as is.
+          return fragmentIdentifier;
+        }
+      }
+    }
+  };
+
+  var getCustomLinkFromURL = function(url) {
+    if (isXWikiCustomLink(url)) {
+      return url;
+    } else {
+      var fragmentIdentifier = getFragmentIdentifierFromURL(url);
+      if (isXWikiCustomLink(fragmentIdentifier)) {
+        return fragmentIdentifier;
+      }
+    }
+  };
+
   return {
     isXWikiCustomLink: isXWikiCustomLink,
     getResourceReferenceFromCustomLink: getResourceReferenceFromCustomLink,
     getCustomLinkFromResourceReference: getCustomLinkFromResourceReference,
+    getCustomLinkFromURL: getCustomLinkFromURL,
     getURLFromCustomLink: getURLFromCustomLink,
     getURLFromResourceReference: getURLFromResourceReference
   };
@@ -478,16 +505,17 @@ define('diagram-graph-xml-filter', ['jquery', 'diagram-config', 'diagram-link-ha
     var styleObject = graph.stylesheet.getCellStyle(style, {});
     var oldSource = styleObject.image || '';
     var newSource = oldSource;
-    var dataSource = $(node).attr('data-source');
     if (oldSource.substring(0, drawIOBasePath.length) === drawIOBasePath) {
       // Convert draw.io WebJar URL to draw.io WAR path.
       // See https://github.com/xwikisas/application-diagram/issues/11
       newSource = oldSource.substring(drawIOBasePath.length);
-    } else if (diagramLinkHandler.isXWikiCustomLink(dataSource)) {
-      // Save the XWiki attachment reference instead of the attachment URL.
-      // We have to encode the value in order to avoid breaking the style string.
-      newSource = encodeURIComponent(dataSource);
-      $(node).removeAttr('data-source');
+    } else {
+      var customLink = diagramLinkHandler.getCustomLinkFromURL(oldSource);
+      if (customLink) {
+        // Save the XWiki attachment reference instead of the attachment URL.
+        // We have to encode the value in order to avoid breaking the style string.
+        newSource = encodeURIComponent(customLink);
+      }
     }
     if (newSource !== oldSource) {
       $(node).attr('style', style.replace(oldSource, newSource));
@@ -509,9 +537,9 @@ define('diagram-graph-xml-filter', ['jquery', 'diagram-config', 'diagram-link-ha
       try {
         var decodedOldSource = decodeURIComponent(oldSource);
         if (diagramLinkHandler.isXWikiCustomLink(decodedOldSource)) {
-          // Replace the attachment reference from the image source with the attachment URL.
-          $(node).attr('data-source', decodedOldSource);
-          newSource = diagramLinkHandler.getURLFromCustomLink(decodedOldSource);
+          // Replace the attachment reference from the image source with the attachment URL, but keep the attachment
+          // reference in the fragment identifier in order to be able to restore it on save.
+          newSource = diagramLinkHandler.getURLFromCustomLink(decodedOldSource) + '#' + oldSource;
         }
       } catch (e) {
         // Ignore.
@@ -529,20 +557,20 @@ define('diagram-graph-xml-filter', ['jquery', 'diagram-config', 'diagram-link-ha
     var styleObject = graph.stylesheet.getCellStyle(style, {});
     var oldSource = styleObject.image || '';
     var newSource = oldSource;
-    var dataSource = $(node).attr('data-source');
     if (oldSource.substring(0, drawIOBasePath.length) === drawIOBasePath) {
       // Convert the draw.io WebJar paths to draw.io WAR paths (e.g. remove the draw.io version).
       newSource = oldSource.substring(drawIOBasePath.length);
     } else if (oldSource.substring(0, 5) !== 'data:') {
-      // Convert other images to data URI (but keep some metadata to idicate the original source).
+      // Convert other images to data URI.
       newSource = maybeConvertToDataURI(oldSource);
-      dataSource = dataSource || oldSource;
+      var customLink = diagramLinkHandler.getCustomLinkFromURL(oldSource);
+      if (customLink) {
+        // For image attachments, keep some metadata to indicate the original source.
+        style = mxUtils.setStyle(style, 'xwikiImage', encodeURIComponent(customLink));
+      }
     }
     if (newSource !== oldSource) {
-      $(node).attr({
-        style: style.replace(oldSource, newSource),
-        'data-source': dataSource
-      });
+      $(node).attr('style', style.replace(oldSource, newSource));
     }
   };
 
