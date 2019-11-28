@@ -711,12 +711,15 @@ define('diagram-utils', ['jquery', 'diagram-link-handler'], function($, diagramL
     var result = originalPrintPreviewAddGraphFragment.apply(this, arguments);
     // Convert XWiki custom links to absolute URLs.
     $(div).find('a').each(function() {
-      var link = $(this).attr('xlink:href');
-      if (diagramLinkHandler.isXWikiCustomLink(link)) {
-        var url = diagramLinkHandler.getURLFromCustomLink(link);
-        var absoluteURL = $('&lt;a/&gt;').attr('href', url).prop('href');
-        $(this).attr('xlink:href', absoluteURL);
-      }
+      // We have to update both SVG links and HTML links (within foreign objects).
+      ['xlink:href', 'href'].forEach(function(name) {
+        var value = $(this).attr(name);
+        if (diagramLinkHandler.isXWikiCustomLink(value)) {
+          var url = diagramLinkHandler.getURLFromCustomLink(value);
+          var absoluteURL = $('&lt;a/&gt;').attr('href', url).prop('href');
+          $(this).attr(name, absoluteURL);
+        }
+      }, this);
     });
     return result;
   };
