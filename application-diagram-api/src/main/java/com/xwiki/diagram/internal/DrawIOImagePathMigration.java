@@ -47,13 +47,16 @@ public class DrawIOImagePathMigration extends AbstractDiagramMigration
 {
     private static final Pattern IMAGE_WEBJAR_PATH = Pattern.compile("image=[\\w/%.]*\\/img/");
 
+    private static final String IMAGE_WAR_PATH = "image=img/";
+
     @Override
     protected Collection<DocumentReference> getDiagramsToMigrate(String wiki) throws QueryException
     {
         // Look for the diagrams that contain draw.io WebJar paths.
         String statement =
             ", BaseObject as obj where obj.name = doc.fullName and obj.className = 'Diagram.DiagramClass'"
-                + " and doc.fullName <> 'Diagram.DiagramTemplate' and doc.content like '%/webjars/%/draw.io/%'";
+                + " and doc.fullName <> 'Diagram.DiagramTemplate' and "
+                + "(doc.content like '%/webjars/%/draw.io/%' or doc.content like '%image=/img/%')";
         Query query = this.queryManager.createQuery(statement, Query.HQL);
         // TODO: Use the "document" query filter instead when upgrading the parent version to XWiki 9.11.
         WikiReference wikiReference = new WikiReference(wiki);
@@ -68,8 +71,12 @@ public class DrawIOImagePathMigration extends AbstractDiagramMigration
         try {
             XWikiContext xcontext = this.xcontextProvider.get();
             XWikiDocument document = xcontext.getWiki().getDocument(diagramReference, xcontext);
-            document.setContent(IMAGE_WEBJAR_PATH.matcher(document.getContent()).replaceAll("image=img/"));
-            document.setAuthorReference(xcontext.getUserReference());
+            // Convert draw.io WebJar paths to draw.io WAR paths.
+            String content = IMAGE_WEBJAR_PATH.matcher(document.getContent()).replaceAll(IMAGE_WAR_PATH);
+            // Fix draw.io WAR paths.
+            content = content.replace("image=/img/", IMAGE_WAR_PATH);
+            document.setContent(content);
+            // Preserve the diagram author.
             xcontext.getWiki().saveDocument(document, "Fixed draw.io image paths", xcontext);
             return true;
         } catch (Exception e) {

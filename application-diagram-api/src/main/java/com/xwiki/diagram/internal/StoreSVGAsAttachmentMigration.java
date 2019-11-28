@@ -83,7 +83,7 @@ public class StoreSVGAsAttachmentMigration extends AbstractDiagramMigration
                     document.addAttachment(DIAGRAM_ATTACHMENT_NAME, new ByteArrayInputStream(svg.getBytes("UTF-8")),
                         xcontext);
                     synchronizeObject(diagramObject, xcontext);
-                    document.setAuthorReference(xcontext.getUserReference());
+                    // Preserve the diagram author.
                     xcontext.getWiki().saveDocument(document, "Moved diagram SVG to attachments", xcontext);
                     return true;
                 }
