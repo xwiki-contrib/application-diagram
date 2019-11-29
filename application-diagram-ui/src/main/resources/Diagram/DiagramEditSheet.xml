@@ -444,6 +444,8 @@ define('diagram-link-editor', ['jquery', 'diagram-link-handler', 'draw.io', 'res
       var result = originalGetLinkForCellState.apply(this, arguments);
       if (diagramLinkHandler.isXWikiCustomLink(result)) {
         result = diagramLinkHandler.getURLFromCustomLink(result);
+        // Use the absolute URL because this SVG is used for PDF export which needs to be portable.
+        result = $('&lt;a/&gt;').attr('href', result).prop('href');
       }
       return result;
     }
