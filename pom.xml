@@ -29,7 +29,7 @@
   </parent>
   <groupId>com.xwiki.diagram</groupId>
   <artifactId>application-diagram-parent</artifactId>
-  <version>1.12-SNAPSHOT</version>
+  <version>1.12</version>
   <name>Diagram Application (Pro) - Parent POM</name>
   <packaging>pom</packaging>
   <description>Create various types of diagrams using draw.io</description>
@@ -41,7 +41,7 @@
     <connection>scm:git:git://github.com/xwikisas/application-diagram.git</connection>
     <developerConnection>scm:git:git@github.com:xwikisas/application-diagram.git</developerConnection>
     <url>https://github.com/xwikisas/application-diagram/tree/master</url>
-    <tag>HEAD</tag>
+    <tag>application-diagram-1.12</tag>
   </scm>
   <properties>
     <draw.io.version>12.3.3</draw.io.version>
