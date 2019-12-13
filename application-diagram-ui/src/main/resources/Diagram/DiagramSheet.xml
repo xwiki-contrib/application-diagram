@@ -462,7 +462,8 @@ define('diagram-graph-xml-filter', ['jquery', 'diagram-config', 'diagram-link-ha
     var node = originalGetGraphXml.apply(this, arguments);
     var filterImage = forStorage === true ? onSaveImage : onExportImage;
     var filterLink = forStorage === true ? onSaveLink : onExportLink;
-    filter(this.graph, node, filterImage, filterLink);
+    var filterBackgroundImage = forStorage === true ? onSaveBackgroundImage : onExportBackgroundImage;
+    filter(this.graph, node, filterImage, filterLink, filterBackgroundImage);
     return node;
   };
 
@@ -470,23 +471,25 @@ define('diagram-graph-xml-filter', ['jquery', 'diagram-config', 'diagram-link-ha
   Editor.prototype.setGraphXml = function(node) {
     var filterImage = node.fromStorage === true ? onLoadImage : onImportImage;
     var filterLink = node.fromStorage === true ? onLoadLink : onImportLink;
-    filter(this.graph, node, filterImage, filterLink);
+    var filterBackgroundImage = node.forStorage === true ? onLoadBackgroundImage : onImportBackgroundImage;
+    filter(this.graph, node, filterImage, filterLink, filterBackgroundImage);
     originalSetGraphXml.call(this, node);
   };
 
   var originalImportGraphModel = Graph.prototype.importGraphModel;
   Graph.prototype.importGraphModel = function(node, dx, dy, crop) {
-    filter(this, node, onImportImage, onImportLink);
+    filter(this, node, onImportImage, onImportLink, onImportBackgroundImage);
     originalImportGraphModel.call(this, node, dx, dy, crop);
   };
 
-  var filter = function(graph, node, filterImage, filterLink) {
+  var filter = function(graph, node, filterImage, filterLink, filterBackgroundImage) {
     findImageNodes(node).each(function() {
       filterImage(this, graph);
     });
     findLinkNodes(node).each(function() {
       filterLink(this, graph);
     });
+    filterBackgroundImage(node);
   };
 
   var findImageNodes = function(node) {
@@ -556,25 +559,60 @@ define('diagram-graph-xml-filter', ['jquery', 'diagram-config', 'diagram-link-ha
     var style = $(node).attr('style') || '';
     var styleObject = graph.stylesheet.getCellStyle(style, {});
     var oldSource = styleObject.image || '';
-    var newSource = oldSource;
-    if (oldSource.substring(0, drawIOBasePath.length) === drawIOBasePath) {
-      // Convert the draw.io WebJar paths to draw.io WAR paths (e.g. remove the draw.io version).
-      newSource = oldSource.substring(drawIOBasePath.length);
-    } else if (oldSource.substring(0, 5) !== 'data:') {
-      // Convert other images to data URI.
-      newSource = maybeConvertToDataURI(oldSource);
-      var customLink = diagramLinkHandler.getCustomLinkFromURL(oldSource);
-      if (customLink) {
-        // For image attachments, keep some metadata to indicate the original source.
-        style = mxUtils.setStyle(style, 'xwikiImage', encodeURIComponent(customLink));
-      }
+    var newSource = convertImageLink(oldSource, true);
+    var customLink = diagramLinkHandler.getCustomLinkFromURL(oldSource);
+    if (customLink) {
+      // For image attachments, keep some metadata to indicate the original source.
+      style = mxUtils.setStyle(style, 'xwikiImage', encodeURIComponent(customLink));
     }
     if (newSource !== oldSource) {
       $(node).attr('style', style.replace(oldSource, newSource));
     }
   };
 
-  var maybeConvertToDataURI = function(url) {
+  var onImportBackgroundImage = function(node) {
+    // Do nothing.
+  };
+
+  var onSaveBackgroundImage = function(node) {
+    // Do nothing.
+  };
+
+  var onLoadBackgroundImage = function(node) {
+    // Do nothing.
+  };
+
+  var onExportBackgroundImage = function(node) {
+    if (node.getAttribute('backgroundImage') == undefined) {
+      return;
+    }
+    var backgroundImage = JSON.parse(node.getAttribute('backgroundImage'));
+    var oldSource = backgroundImage.src;
+    var newSource = convertImageLink(oldSource);
+    var customLink = diagramLinkHandler.getCustomLinkFromURL(oldSource);
+    if (customLink) {
+      // For image attachments, keep some metadata to indicate the original source.
+      backgroundImage.xwikiImage = encodeURIComponent(customLink);
+    }
+    if (newSource !== oldSource) {
+      backgroundImage.src = newSource;
+      node.setAttribute('backgroundImage', JSON.stringify(backgroundImage));
+    }
+  };
+
+  var convertImageLink = function(oldSource, removeBase) {
+    var newSource = oldSource;
+    if (oldSource.substring(0, drawIOBasePath.length) === drawIOBasePath) {
+      // Convert the draw.io WebJar paths to draw.io WAR paths (e.g. remove the draw.io version).
+      newSource = oldSource.substring(drawIOBasePath.length);
+    } else if (oldSource.substring(0, 5) !== 'data:') {
+      // Convert other images to data URI.
+      newSource = maybeConvertToDataURI(oldSource, removeBase);
+    }
+    return newSource;
+  };
+
+  var maybeConvertToDataURI = function(url, removeBase) {
     var image = getCachedImageByURL(url);
     if (image) {
       var canvas = document.createElement('canvas');
@@ -585,7 +623,8 @@ define('diagram-graph-xml-filter', ['jquery', 'diagram-config', 'diagram-link-ha
       try {
         url = canvas.toDataURL();
         var semicolonIndex = url.indexOf(';');
-        if (semicolonIndex &gt; 0) {
+        // Remove temporarily 'base64,' when the url is used in a style attribute, since a split is done by ',' afterwards.
+        if (semicolonIndex &gt; 0 &amp;&amp; removeBase ) {
           url = url.substring(0, semicolonIndex) + url.substring(url.indexOf(',', semicolonIndex + 1));
         }
       } catch (e) {
