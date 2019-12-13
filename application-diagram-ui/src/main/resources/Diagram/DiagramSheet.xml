@@ -497,7 +497,7 @@ define('diagram-graph-xml-filter', ['jquery', 'diagram-config', 'diagram-link-ha
   };
 
   var findLinkNodes = function(node) {
-    return $(node).find('UserObject[link]');
+    return $(node).find('UserObject[link], mxCell[value*="\\&lt;a href"]');
   };
 
   // Convert the draw.io WebJar paths to draw.io WAR paths (e.g. remove the draw.io version from the path).
@@ -673,15 +673,16 @@ define('diagram-graph-xml-filter', ['jquery', 'diagram-config', 'diagram-link-ha
   };
 
   // Replace custom internal links with absolute URLs (but keep some metadata to indicate the entity reference).
+  // Consider both the cases when the node is UserObject or mxCell.
   var onExportLink = function(node) {
-    var link = $(node).attr('link');
+    var tagName = node.tagName.toLowerCase();
+    var value = $(node).attr('value');
+    var href = $('&lt;div&gt;&lt;/div&gt;').html(value).find('a[href]').attr('href');
+    var link = tagName == 'userobject' ? $(node).attr('link') : href;
     if (diagramLinkHandler.isXWikiCustomLink(link)) {
       var url = diagramLinkHandler.getURLFromCustomLink(link);
       var absoluteURL = $('&lt;a/&gt;').attr('href', url).prop('href');
-      $(node).attr({
-        link: absoluteURL,
-        'data-link': link
-      });
+      updateLinkAttributes(node, value, link, absoluteURL);
     }
   };
 
@@ -689,11 +690,20 @@ define('diagram-graph-xml-filter', ['jquery', 'diagram-config', 'diagram-link-ha
   var onImportLink = function(node) {
     var link = $(node).attr('data-link');
     if (diagramLinkHandler.isXWikiCustomLink(link)) {
-      $(node).attr({
-        link: link,
-        'data-link': null
-      });
+      var value = $(node).attr('value');
+      var href = $('&lt;div&gt;&lt;/div&gt;').html(value).find('a[href]').attr('href');
+      updateLinkAttributes(node, value, href, link);
     }
+  };
+
+  var updateLinkAttributes = function(node, value, oldURL, newURL) {
+    var attributesMap = {'data-link': null};
+    if (node.tagName.toLowerCase() == 'userobject') {
+      attributesMap.link = newURL;
+    } else {
+      attributesMap.value = value.replace(oldURL, newURL);
+    }
+    $(node).attr(attributesMap);
   };
 });
 
