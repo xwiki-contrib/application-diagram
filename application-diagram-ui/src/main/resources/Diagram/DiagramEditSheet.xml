@@ -424,9 +424,17 @@ define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'diagram-utils',
       <code>/**
  * Overrides the link dialog in order to support creating links to wiki pages.
  */
-define('diagram-link-editor', ['jquery', 'diagram-link-handler', 'draw.io', 'resourceSelector'], function($, diagramLinkHandler) {
+define('diagram-link-editor', [
+  'jquery',
+  'diagram-link-handler',
+  'draw.io',
+  'resourceSelector'
+], function($, diagramLinkHandler) {
   EditorUi.prototype.showLinkDialog = function(value, selectLabel, callback) {
-    $('#diagramLinkModal').selectResource(diagramLinkHandler.getResourceReferenceFromCustomLink(value), {
+    var resourceReference = diagramLinkHandler.getResourceReferenceFromCustomLink(value);
+    // We append the modal to the body element in order to fix Issue #108: "Inserting a link in full screen mode is not
+    // possible".
+    $('#diagramLinkModal').appendTo('body').selectResource(resourceReference, {
       selectLabel: selectLabel
     }).done(function(resourceReference) {
       callback(diagramLinkHandler.getCustomLinkFromResourceReference(resourceReference));
