@@ -156,7 +156,7 @@
   'diagram-link-handler',
   'diagram-graph-xml-filter',
   'draw.io.viewer'
-], function($, diagramUtils) {
+], function($, diagramUtils, diagramLinkHandler) {
   var getOrigin = function() {
     var origin = window.location.origin;
     if (!origin) {
@@ -182,6 +182,43 @@
   // shapes that don't interset the clip anymore because the return line has been commented out.
   // See https://github.com/jgraph/mxgraph/commit/d5c1345ec946b9d55a9c2a8c1c5df0f154561edf
   mxPrintPreview.prototype.clipping = false;
+
+  // Overwrite in order to fix: Links with heterogeneous inner styles are not entirely clickable #107
+  var graphLabelLinkClicked = Graph.prototype.labelLinkClicked;
+  Graph.prototype.labelLinkClicked = function() {
+    var newArguments = arguments;
+    var link = arguments[1];
+    var href = link.getAttribute('href');
+    var originalLinkPolicy = this.linkPolicy;
+    if (diagramLinkHandler.isXWikiCustomLink(href)) {
+      newArguments = Array.prototype.slice.apply(arguments);
+      newArguments[1] = $('&lt;a/&gt;').attr('href', diagramLinkHandler.getURLFromCustomLink(href))[0];
+      // Behave as if the link is clicked directly.
+      this.linkPolicy = 'blank';
+    }
+    try {
+      graphLabelLinkClicked.apply(this, newArguments);
+    } catch (e) {
+      // Restore the link policy.
+      this.linkPolicy = originalLinkPolicy;
+    }
+  };
+  // Overwrite in order to fix the same issue but when clicking the links from the light box.
+  var graphAddClickHandler = Graph.prototype.addClickHandler;
+  Graph.prototype.addClickHandler = function() {
+    var originalBeforeClick = arguments[1];
+    var newArguments = Array.prototype.slice.apply(arguments);
+    if (typeof originalBeforeClick === 'function') {
+      var newBeforeClick = function(event, href) {
+        if (href == null) {
+          href = $(mxEvent.getSource(event)).closest('a').attr('href');
+        }
+        originalBeforeClick.call(this, event, href);
+      };
+      newArguments[1] = newBeforeClick;
+    }
+    graphAddClickHandler.apply(this, newArguments);
+  };
 
   var getDiagramViewerConfig = function(diagramContainer) {
     var config = {
