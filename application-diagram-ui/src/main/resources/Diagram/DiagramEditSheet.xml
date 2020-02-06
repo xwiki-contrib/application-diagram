@@ -423,6 +423,7 @@ define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'diagram-utils',
     <property>
       <code>define('svg-handler', ['jquery'], function($) {
   var lineHeight = 15;
+  var spaceWidth = 5;
   var addTagSpecificStyle = function(element, s, w, h, htmlConverter, str, alt) {
     switch (element.tagName.toLowerCase()){
       case 'h1':
@@ -448,6 +449,12 @@ define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'diagram-utils',
         alt.setAttribute('font-size', Math.round(s.fontSize - 0.3 * s.fontSize) + 'px');
         alt.setAttribute('font-weight', 'bold');
         break;
+      case 'b':
+        alt.setAttribute('font-weight', 'bold');
+        break;
+      case 'i':
+        alt.setAttribute('font-style', 'italic');
+        break;
       case 'a':
         var link = document.createElementNS('http://www.w3.org/2000/svg', 'a');
         link.setAttribute('x', w);
@@ -469,6 +476,7 @@ define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'diagram-utils',
       .width();
   };
 
+  var takenCoordinates;
   // Creates a row inside a text element that should be wrapped. The coordinates of the first row are already saved.
   var createRow = function(w, h, rowNb) {
     var row = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
@@ -501,13 +509,35 @@ define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'diagram-utils',
     });
   };
 
-  var takenCoordinates = [];
+  var isHeadingElement = function(element) {
+    var tag = element.tagName.toLowerCase();
+    return ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tag);
+  }
+
+  var isBlockElement = function(element) {
+    var tag = element.tagName.toLowerCase();
+    return ['li', 'p', 'div'].includes(tag) || isHeadingElement(element);
+  }
+
+  var isListElement = function(element) {
+    var tag = element.tagName.toLowerCase();
+    return ['ul', 'ol'].includes(tag);
+  }
+
+  var isInlineElement = function(element) {
+    var tag = element.tagName.toLowerCase();
+    return ['b', 'i', 'span'].includes(tag);
+  }
+
+  var isParagraphWithPartialStyle = function(node, nbOfSiblings) {
+    return node.nodeType === 3 || (isInlineElement(node) &amp;&amp; nbOfSiblings &gt; 1);
+  }
+
   // For the current block of text take into consideration if those coordinates are already in use.
-  // This is used when we are computing manually the container of children elements.
-  var maybeChangeHeight = function(w, h, isChildElement) {
-    if (!isChildElement) {
-      return h;
-    }
+  // This is used when we are manually computing the container of children elements.
+  var maybeChangeHeight = function(w, h, element) {
+    // They didn't took into consideration the size of an heading tag.
+    h = isHeadingElement(element) ? h - lineHeight : h;
     var thisCoordinates = {'w': w, 'h': h};
     takenCoordinates.each(function(coordinates) {
       if (coordinates['w'] == thisCoordinates['w'] &amp;&amp; coordinates['h'] == thisCoordinates['h']) {
@@ -519,10 +549,12 @@ define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'diagram-utils',
     return h;
   };
 
-  // Create the basis of a svg element.
-  var createSvgElement = function(s, w, h, tag, isChildElement) {
+  // Create the basis of a svg element. Calculate new coordinates if is needed.
+  var createSvgElement = function(s, w, h, tag, element) {
     var alt = document.createElementNS('http://www.w3.org/2000/svg', tag);
-    h = maybeChangeHeight(w, h, isChildElement);
+    if (element &amp;&amp; isBlockElement(element)) {
+      h = maybeChangeHeight(w, h, element);
+    }
     alt.setAttribute('x', w);
     alt.setAttribute('y', h);
     alt.setAttribute('fill', s.fontColor || 'black');
@@ -547,27 +579,24 @@ define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'diagram-utils',
     return alt;
   };
 
-  var convertTextElementToSvg = function(element, s, w, h, htmlConverter, str, rectWidth) {
-    var tagName = element.tagName.toLowerCase();
-    var listTags = ['ul', 'ol'];
-    var isAList = listTags.includes(tagName);
-    if (tagName == 'br') {
+  var convertTextElementToSvg = function(element, s, w, h, htmlConverter, str, rectWidth, isFirstChild) {
+    if (element.tagName.toLowerCase() == 'br') {
       return;
     }
-    if ($(element).is(':first-child')) {
+    if (isFirstChild) {
       takenCoordinates = [];
     }
     w = Math.round(w / 2);
     h = Math.round((h + s.fontSize) / 2);
-    var alt = createSvgElement(s, w, h, 'text', !isAList);
+    var alt = createSvgElement(s, w, h, 'text', element);
 
     // Consider rectWidth as the container width to do the word wrap when needed. Add the inner html only if the
-    // element is not a list, since the text should be distributed to children instead of being shown at once.
-    // The same is applied for when the text is longer then the rectWidth, since it will be distributed to tspan elements.
+    // element is not a list, since the text should be distributed to children instead of being shown at once. The same
+    // is applied for when the text is longer then the rectWidth, since it will be distributed to tspan elements.
     htmlConverter.innerHTML = element.innerText;
     var content = htmlConverter.value;
     var contentWidth = getStrWidth(content, s);
-    if (!isAList) {
+    if (!isListElement(element)) {
       if (contentWidth &gt; rectWidth) {
         wrapText(alt, s, w, h, content, contentWidth, rectWidth);
       } else {
@@ -575,13 +604,13 @@ define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'diagram-utils',
       }
     }
 
-    // Convert the children. Have a container that will hold the text element in case it has other children.
+    // Convert recursively the children. Have a container that will hold the text element in case it has other children.
     if (element.childElements().length &gt; 0) {
-      var container = createSvgElement(s, w, h, 'g', false);
+      var container = createSvgElement(s, w, h, 'g', null);
       // TODO: Don't append alt element, unless it has a content.
       container.append(alt);
       element.childElements().each(function(child) {
-        var childSvg = convertTextElementToSvg(child, s, w, h, htmlConverter, str, rectWidth);
+        var childSvg = convertTextElementToSvg(child, s, w, h, htmlConverter, str, rectWidth, false);
         if (childSvg != undefined) {
           container.append(childSvg);
         }
@@ -599,7 +628,7 @@ define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'diagram-utils',
 
   return {
     convertTextElementToSvg: convertTextElementToSvg,
-    lineHeight: lineHeight
+    isParagraphWithPartialStyle: isParagraphWithPartialStyle
   };
 });
 /**
@@ -657,24 +686,33 @@ define('diagram-link-editor', [
           }
         });
 
-        var previousHeight;
         if (this.foAltText != null) {
           var s = this.state;
           var htmlConverter = document.createElement('textarea');
           var content = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-          var elements = fo.firstElementChild.firstElementChild.childElements();
+          var elementsContainer = $(fo).children().first().children().first();
+          var childNodes = elementsContainer.contents();
           // Take the width from parent rect, which is the last one found.
           var rectangles = $(fo.parentElement.parentElement).find('rect');
           var rectWidth = rectangles[rectangles.length - 1].width.baseVal.valueAsString;
           try {
-            if (elements.length &gt; 0) {
-              elements.each(function(element) {
-                if (previousHeight === h) {
-                  h += 2 * svgHandler.lineHeight;
+            if (childNodes.length &gt; 0) {
+              childNodes.each(function(index) {
+                // Make a clone of the node, to not alter the original child.
+                var node = $(this).clone()[0];
+                var stop = false;
+                // If this paragraph has partial styled nodes, like a link added to just a part of the text, fallback
+                // to display just the text, without any styles. This is done since is too complex to calculate the
+                // coordinates of the styled node, considering the last element added and that it may be needed to wrap
+                // the text.
+                if (svgHandler.isParagraphWithPartialStyle(node, childNodes.length)) {
+                  node = $('&lt;span&gt;&lt;/span&gt;').html(this.parentElement.innerText)[0];
+                  stop = true;
                 }
-                previousHeight = h;
-                var alt = svgHandler.convertTextElementToSvg(element, s, w, h, htmlConverter, str, rectWidth);
+                var alt = svgHandler.convertTextElementToSvg(node, s, w, h, htmlConverter, str, rectWidth, index == 0);
                 content.append(alt);
+                // If we took the inner text of the parent, the other child nodes are not needed.
+                return !stop;
               });
               return content;
             } else {
