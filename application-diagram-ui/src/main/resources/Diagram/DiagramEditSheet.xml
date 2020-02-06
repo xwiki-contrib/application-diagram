@@ -448,6 +448,13 @@ define('diagram-store', ['jquery', 'xwiki-meta', 'xwiki-utils', 'diagram-utils',
         alt.setAttribute('font-size', Math.round(s.fontSize - 0.3 * s.fontSize) + 'px');
         alt.setAttribute('font-weight', 'bold');
         break;
+      case 'a':
+        var link = document.createElementNS('http://www.w3.org/2000/svg', 'a');
+        link.setAttribute('x', w);
+        link.setAttribute('y', h);
+        link.setAttribute('xlink:href', element.href);
+        link.append(alt);
+        return link;
       default:
         return alt;
     }
