@@ -604,7 +604,7 @@ define('diagram-link-editor', [
   'svg-handler',
   'draw.io',
   'resourceSelector'
-], function($, diagramLinkHandler, sh) {
+], function($, diagramLinkHandler, svgHandler) {
   EditorUi.prototype.showLinkDialog = function(value, selectLabel, callback) {
     var resourceReference = diagramLinkHandler.getResourceReferenceFromCustomLink(value);
     // We append the modal to the body element in order to fix Issue #108: "Inserting a link in full screen mode is not
@@ -641,6 +641,14 @@ define('diagram-link-editor', [
           // Keep only the text content.
           str = $('&lt;div/&gt;').html(str).text() || this.foAltText;
         }
+        // Update links inside foreignObject to use absolute URLs, since the generated SVG needs to be portable.
+        $(fo).find('a').each(function() {
+          var oldLink = $(this).attr('href');
+          if (diagramLinkHandler.isXWikiCustomLink(oldLink)) {
+            var newLink = diagramLinkHandler.getURLFromCustomLink(oldLink);
+            $(this).attr('href', newLink);
+          }
+        });
 
         var previousHeight;
         if (this.foAltText != null) {
@@ -655,10 +663,10 @@ define('diagram-link-editor', [
             if (elements.length &gt; 0) {
               elements.each(function(element) {
                 if (previousHeight === h) {
-                  h += 2 * sh.lineHeight;
+                  h += 2 * svgHandler.lineHeight;
                 }
                 previousHeight = h;
-                var alt = sh.convertTextElementToSvg(element, s, w, h, htmlConverter, str, rectWidth);
+                var alt = svgHandler.convertTextElementToSvg(element, s, w, h, htmlConverter, str, rectWidth);
                 content.append(alt);
               });
               return content;
