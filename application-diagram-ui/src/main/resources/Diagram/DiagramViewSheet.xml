@@ -250,6 +250,32 @@
     return config;
   };
 
+  // Fix position of a dialog at the top of the window.
+  Dialog.prototype.fixDialogPosition = function() {
+    this.container.style.top = '0px';
+    this.container.style.position = 'fixed';
+  };
+
+  // If a diagram is inserted in a page with a lot of content before it, then PrintDialog won't be visible, since the
+  // top of the dialog is computed to consider a page that only holds the diagram.
+  var originalShowDialog = EditorUi.prototype.showDialog;
+  EditorUi.prototype.showDialog = function(elt, w, h, modal, closable, onClose, noScroll, transparent, onResize,
+      ignoreBgClick) {
+    originalShowDialog.apply(this, arguments);
+    var dialog = this.dialog;
+    if ($(dialog.container).find("input[name='printZoom']")) {
+      dialog.fixDialogPosition();
+      var originalResizeListener = dialog.resizeListener;
+      dialog.resizeListener =  mxUtils.bind(dialog, function() {
+        originalResizeListener.apply(this, arguments);
+        this.fixDialogPosition();
+      });
+      // Since the listener is already added at construction step, we need to remove it and reattach the new function.
+      mxEvent.removeListener(window, 'resize', originalResizeListener);
+      mxEvent.addListener(window, 'resize', dialog.resizeListener);
+    }
+  };
+
   $.fn.viewDiagram = function(configOverride) {
     return this.each(function() {
       var fromStorage = false;
