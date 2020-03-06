@@ -65,19 +65,14 @@ public class DiagramApplicationListener extends AbstractEventListener
      */
     public DiagramApplicationListener()
     {
-        // TODO: Filter the extension id from here after we upgrade the parent version to XWiki 9.11.
-        super(ROLE_HINT, new ExtensionUpgradedEvent());
+        super(ROLE_HINT, new ExtensionUpgradedEvent("com.xwiki.diagram:application-diagram"));
     }
 
     @Override
     public void onEvent(Event event, Object source, Object data)
     {
-        if (event instanceof ExtensionUpgradedEvent) {
-            ExtensionEvent extensionEvent = (ExtensionEvent) event;
-            if ("com.xwiki.diagram:application-diagram".equals(extensionEvent.getExtensionId().getId())) {
-                getTargetWikis(extensionEvent).forEach(this::migrate);
-            }
-        }
+        ExtensionEvent extensionEvent = (ExtensionEvent) event;
+        getTargetWikis(extensionEvent).forEach(this::migrate);
     }
 
     private Collection<String> getTargetWikis(ExtensionEvent event)

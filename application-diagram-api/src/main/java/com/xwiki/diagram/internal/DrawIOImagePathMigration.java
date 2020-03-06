@@ -21,15 +21,15 @@ package com.xwiki.diagram.internal;
 
 import java.util.Collection;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 
 import org.xwiki.component.annotation.Component;
 import org.xwiki.model.reference.DocumentReference;
-import org.xwiki.model.reference.WikiReference;
 import org.xwiki.query.Query;
 import org.xwiki.query.QueryException;
+import org.xwiki.query.QueryFilter;
 
 import com.xpn.xwiki.XWikiContext;
 import com.xpn.xwiki.doc.XWikiDocument;
@@ -49,6 +49,10 @@ public class DrawIOImagePathMigration extends AbstractDiagramMigration
 
     private static final String IMAGE_WAR_PATH = "image=img/";
 
+    @Inject
+    @Named("document")
+    private QueryFilter documentQueryFilter;
+
     @Override
     protected Collection<DocumentReference> getDiagramsToMigrate(String wiki) throws QueryException
     {
@@ -58,11 +62,7 @@ public class DrawIOImagePathMigration extends AbstractDiagramMigration
                 + " and doc.fullName <> 'Diagram.DiagramTemplate' and "
                 + "(doc.content like '%/webjars/%/draw.io/%' or doc.content like '%image=/img/%')";
         Query query = this.queryManager.createQuery(statement, Query.HQL);
-        // TODO: Use the "document" query filter instead when upgrading the parent version to XWiki 9.11.
-        WikiReference wikiReference = new WikiReference(wiki);
-        return query.setWiki(wiki).execute().stream()
-            .map(result -> this.documentReferenceResolver.resolve(result.toString(), wikiReference))
-            .collect(Collectors.toList());
+        return query.setWiki(wiki).addFilter(documentQueryFilter).execute();
     }
 
     @Override

@@ -21,16 +21,16 @@ package com.xwiki.diagram.internal;
 
 import java.io.ByteArrayInputStream;
 import java.util.Collection;
-import java.util.stream.Collectors;
-
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 
 import org.xwiki.component.annotation.Component;
 import org.xwiki.model.reference.DocumentReference;
 import org.xwiki.model.reference.LocalDocumentReference;
-import org.xwiki.model.reference.WikiReference;
 import org.xwiki.query.Query;
 import org.xwiki.query.QueryException;
+import org.xwiki.query.QueryFilter;
 
 import com.xpn.xwiki.XWikiContext;
 import com.xpn.xwiki.doc.XWikiAttachment;
@@ -53,6 +53,10 @@ public class StoreSVGAsAttachmentMigration extends AbstractDiagramMigration
 
     private static final String DIAGRAM_ATTACHMENT_NAME = "diagram.svg";
 
+    @Inject
+    @Named("document")
+    private QueryFilter documentQueryFilter;
+
     @Override
     protected Collection<DocumentReference> getDiagramsToMigrate(String wiki) throws QueryException
     {
@@ -61,11 +65,7 @@ public class StoreSVGAsAttachmentMigration extends AbstractDiagramMigration
             + "where doc.fullName = obj.name and obj.className = 'Diagram.DiagramClass' and obj.id = prop.id.id"
             + " and prop.id.name = 'svg' and doc.fullName <> 'Diagram.DiagramTemplate'";
         Query query = this.queryManager.createQuery(statement, Query.HQL);
-        // TODO: Use the "document" query filter instead when upgrading the parent version to XWiki 9.11.
-        WikiReference wikiReference = new WikiReference(wiki);
-        return query.setWiki(wiki).execute().stream()
-            .map(result -> this.documentReferenceResolver.resolve(result.toString(), wikiReference))
-            .collect(Collectors.toList());
+        return query.setWiki(wiki).addFilter(documentQueryFilter).execute();
     }
 
     @Override

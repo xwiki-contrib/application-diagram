@@ -45,7 +45,7 @@
   </scm>
   <properties>
     <draw.io.version>12.3.3</draw.io.version>
-    <licensing.version>1.14.5</licensing.version>
+    <licensing.version>1.15</licensing.version>
   </properties>
   <modules>
     <module>application-diagram-api</module>
