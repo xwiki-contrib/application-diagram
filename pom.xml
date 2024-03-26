@@ -46,6 +46,7 @@
     <tag>HEAD</tag>
   </scm>
   <properties>
+    <xwiki.release.jira.skip>false</xwiki.release.jira.skip>
     <!-- Old names of this module used for retro compatibility when resolving dependencies of old extensions -->
     <xwiki.extension.features>
       mflorea:diagram-application,
