@@ -666,6 +666,13 @@ define('diagramStore', ['jquery', 'draw.io', 'xwiki-events-bridge'], function($)
   };
 
   var fullScreen = new XWiki.widgets.FullScreen();
+
+  // We only call  the init in versions that have the function defined so we don't get an error in the console.
+  // The 'if' should be removed after upgrading the app to a parent &gt;= 17.10.2.
+  if (typeof fullScreen.initDom === 'function') {
+    fullScreen.initDom();
+  }
+
   var fixFullScreenToggle = function(editorUI) {
     mxEvent.removeAllListeners(editorUI.fullscreenElement);
     editorUI.container._x_fullScreenActivator = editorUI.fullscreenElement;
